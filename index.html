@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-<title>Twin Fists V9 — Arc Library, Capability AI & Emotional Stages</title>
+<title>Twin Fists V10 — Arc Library, Capability AI & Emotional Stages</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -462,6 +462,111 @@
     .act-btn.jump { width: 2.8rem; height: 2.8rem; }
     .dpad { grid-template-columns: repeat(3, 2.8rem); grid-template-rows: repeat(3, 2.8rem); }
   }
+
+
+  /* Persistent mood signal: readable even when color is reduced or ignored. */
+  .emotion-signal {
+    position: absolute;
+    top: calc(var(--safe-top) + 0.618rem);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 12;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.382rem 0.618rem;
+    background: rgba(0,0,0,0.62);
+    border: 2px solid var(--c-primary);
+    box-shadow: 3px 3px 0 0 var(--c-contrast);
+    font-family: 'VT323', monospace;
+    font-size: 1.15rem;
+    letter-spacing: 0.12em;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .emotion-signal .glyph { font-size: 1.3rem; }
+  .emotion-signal .mode { color: var(--c-primary); }
+
+  .run-meta-badge {
+    top: calc(var(--safe-top) + 3.35rem) !important;
+  }
+
+  /* QA Lab is debug-only: open with ?debug=1 or ?qa=1. */
+  .qa-lab {
+    position: absolute;
+    left: calc(var(--safe-left) + 0.618rem);
+    bottom: calc(var(--safe-bottom) + 10.5rem);
+    z-index: 40;
+    width: min(22rem, calc(100vw - 1.236rem));
+    background: rgba(0,0,0,0.82);
+    border: 2px solid var(--c-secondary);
+    box-shadow: 4px 4px 0 0 var(--c-contrast);
+    padding: 0.618rem;
+    font-family: 'VT323', monospace;
+    pointer-events: auto;
+  }
+  .qa-title {
+    font-family: 'Bungee', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    color: var(--c-primary);
+    margin-bottom: 0.382rem;
+  }
+  .qa-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem 0.618rem;
+    font-size: 0.98rem;
+    line-height: 1.15;
+    margin-bottom: 0.618rem;
+  }
+  .qa-metrics span { color: var(--c-ui); }
+  .qa-metrics strong { color: var(--c-secondary); font-weight: 400; }
+  .qa-feature-line {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .qa-btn-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.382rem;
+  }
+  .qa-btn {
+    background: rgba(0,0,0,0.45);
+    color: var(--c-ui);
+    border: 2px solid var(--c-primary);
+    font-family: 'VT323', monospace;
+    font-size: 0.95rem;
+    padding: 0.382rem;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 0 var(--c-contrast);
+  }
+  .qa-btn:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 0 var(--c-contrast); }
+
+  body.contrast-aid .hp-wrap,
+  body.contrast-aid .score-stack,
+  body.contrast-aid .emotion-signal,
+  body.contrast-aid .run-meta-badge,
+  body.contrast-aid .qa-lab {
+    background: rgba(0,0,0,0.92);
+    border-width: 3px;
+    text-shadow: 0 0 2px #000, 1px 1px 0 #000;
+  }
+  body.contrast-aid .score-val,
+  body.contrast-aid .wave-line,
+  body.contrast-aid .hp-label,
+  body.contrast-aid .special-label,
+  body.contrast-aid .emotion-signal,
+  body.contrast-aid .run-meta-badge {
+    text-shadow: 0 0 2px #000, 1px 1px 0 #000, -1px -1px 0 #000;
+  }
+  body.contrast-aid .hp-bar,
+  body.contrast-aid .special-bar {
+    border-width: 2px;
+  }
+
 </style>
 </head>
 <body>
@@ -483,6 +588,12 @@
       <div class="score-val" id="score-val">0</div>
       <div class="wave-line" id="wave-line">WAVE 1</div>
     </div>
+  </div>
+
+  <div id="emotion-signal" class="emotion-signal hidden" aria-live="polite">
+    <span class="glyph" id="emotion-signal-glyph">⚠</span>
+    <span class="mode">MOOD</span>
+    <span id="emotion-signal-label">TENSE</span>
   </div>
 
   <!-- Icon stack (top-right, separate from HUD score) -->
@@ -519,12 +630,33 @@
     </div>
   </div>
 
+  <div id="qa-lab" class="qa-lab hidden" aria-live="polite">
+    <div class="qa-title">QA LAB · V10</div>
+    <div class="qa-metrics">
+      <span>FPS <strong id="qa-fps">—</strong></span>
+      <span>MOOD <strong id="qa-mood">—</strong></span>
+      <span>INTENSITY <strong id="qa-intensity">—</strong></span>
+      <span>PEAK dB <strong id="qa-peak">—</strong></span>
+      <span>ENEMIES <strong id="qa-enemies">—</strong></span>
+      <span>PROPS <strong id="qa-props">—</strong></span>
+      <span class="qa-feature-line">MUSIC <strong id="qa-features">—</strong></span>
+    </div>
+    <div class="qa-btn-grid">
+      <button class="qa-btn" id="qa-audio-stress">AUDIO STRESS</button>
+      <button class="qa-btn" id="qa-full-meter">FULL METER</button>
+      <button class="qa-btn" id="qa-grappler">SPAWN GRAPPLER</button>
+      <button class="qa-btn" id="qa-bottler">SPAWN BOTTLER</button>
+      <button class="qa-btn" id="qa-crown">CROWN CLASH</button>
+      <button class="qa-btn" id="qa-flash">OVERLAY PULSE</button>
+    </div>
+  </div>
+
   <!-- Start modal -->
   <div class="modal-bg" id="start-modal">
     <div class="modal">
       <div class="title-art">
         <h1>TWIN FISTS</h1>
-        <div class="sub">— A STREET BRAWLER · V9 —</div>
+        <div class="sub">— A STREET BRAWLER · V10 —</div>
       </div>
       <p style="margin-bottom: var(--s-2); line-height: 1.6;">
         The city's gone sideways. Thugs in the alley, neon humming overhead. You've got two fists, two feet, and one shot to clear the block.
@@ -590,6 +722,14 @@
         <div class="toggle-row">
           <span>HAPTICS</span>
           <div class="toggle on" id="haptics-toggle" role="switch" aria-checked="true" tabindex="0"></div>
+        </div>
+        <div class="toggle-row">
+          <span>EMOTION SIGNAL</span>
+          <div class="toggle on" id="signal-toggle" role="switch" aria-checked="true" tabindex="0"></div>
+        </div>
+        <div class="toggle-row">
+          <span>CONTRAST AID</span>
+          <div class="toggle" id="contrast-toggle" role="switch" aria-checked="false" tabindex="0"></div>
         </div>
         <div class="toggle-row">
           <span>PRACTICE MOOD</span>
@@ -1078,6 +1218,7 @@ const DEFAULT_SETTINGS = {
   practiceMode: false,
   arcSelection: 'firstNightOut',
   mute: false, reduceMotion: false, haptics: true,
+  emotionSignal: true, contrastAid: false,
 };
 function loadSettings() {
   try {
@@ -1088,6 +1229,8 @@ function loadSettings() {
       if (!migrated.previewMood && parsed.mood) migrated.previewMood = parsed.mood;
       if (!MOODS[migrated.previewMood]) migrated.previewMood = DEFAULT_SETTINGS.previewMood;
       migrated.practiceMode = !!migrated.practiceMode;
+      migrated.emotionSignal = migrated.emotionSignal !== false;
+      migrated.contrastAid = !!migrated.contrastAid;
       return migrated;
     }
   } catch(e) {}
@@ -1097,6 +1240,10 @@ function saveSettings() {
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e) {}
 }
 let settings = loadSettings();
+
+const QUERY = new URLSearchParams(window.location.search);
+const DEBUG_MODE = QUERY.has('debug') || QUERY.get('qa') === '1';
+const QA_STATE = { fps: 0, frames: 0, acc: 0 };
 
 /* ---------- COLOR SYSTEM ---------- */
 function applyMoodPalette(moodId) {
@@ -1148,7 +1295,7 @@ function musicFeatureAllowed(feature, moodId) {
 /* ---------- AUDIO ENGINE ---------- */
 const Audio = {
   ready: false, started: false,
-  musicBus: null, sfxBus: null, masterBus: null, limiter: null,
+  musicBus: null, sfxBus: null, masterBus: null, limiter: null, masterMeter: null,
   music: { active: false, parts: [], synths: [], noiseSynth: null, reactivity: null },
   init() {
     if (this.ready) return;
@@ -1157,6 +1304,12 @@ const Audio = {
     this.masterBus = new Tone.Gain(0.85).connect(this.limiter);
     this.musicBus = new Tone.Gain(this.linearToGain(settings.musicVol) * 0.7).connect(this.masterBus);
     this.sfxBus   = new Tone.Gain(this.linearToGain(settings.sfxVol)   * 0.85).connect(this.masterBus);
+    try {
+      this.masterMeter = new Tone.Meter({ normalRange: false, smoothing: 0.82 });
+      this.masterBus.connect(this.masterMeter);
+    } catch (e) {
+      this.masterMeter = null;
+    }
     // Light reverb on music for atmosphere
     const reverb = new Tone.Reverb({ decay: 1.6, wet: 0.18 }).connect(this.musicBus);
     this.musicReverb = reverb;
@@ -3130,13 +3283,13 @@ class World {
     this.shake(8);
   }
 
-  spawnEnemy() {
+  spawnEnemy(forcedArchetypeId = null) {
     const m = this.mood;
     const gp = this.gameplayMood;
     const side = RNG.random() < 0.5 ? -1 : 1;
     const sx = side < 0 ? -20 : W + 20;
     const sy = backY + 20 + RNG.random() * (groundY - backY - 40);
-    const archetypeId = pickWeighted(gp.archetypeWeights, { mood: this.currentMoodId, wave: this.wave });
+    const archetypeId = forcedArchetypeId || pickWeighted(gp.archetypeWeights, { mood: this.currentMoodId, wave: this.wave });
     const archetype = ENEMY_ARCHETYPES[archetypeId] || ENEMY_ARCHETYPES.weak;
 
     // Enemy palette: contrasts the active emotional phase.
@@ -3577,12 +3730,38 @@ class World {
       : Math.floor(specialPct) + '%';
     document.getElementById('score-val').textContent = this.score.toLocaleString();
     document.getElementById('wave-line').textContent = 'WAVE ' + this.wave;
+    updateEmotionSignal();
 
     // Game over check
     if (!this.player.isAlive && this.player.deathTime > 1.5 && !this.gameOverTriggered) {
       this.gameOverTriggered = true;
       onGameOver(this.score, this.wave - 1);
     }
+  }
+
+  runAudioStressTest() {
+    if (!this.player) return;
+    this.player.hp = Math.max(1, Math.min(this.player.hp, this.player.maxHp * 0.22));
+    this.combatMetrics.hitStreak = Math.max(this.combatMetrics.hitStreak, 6);
+    this.combatMetrics.lastHitAt = performance.now();
+    this.combatMetrics.hitTimes.push(performance.now(), performance.now() - 120, performance.now() - 240);
+    while (this.enemies.filter(e => e.isAlive).length < 6) this.spawnEnemy('fast');
+    this.addFloat('AUDIO STRESS', W / 2, H * 0.28, this.mood.accent_colors[0]);
+    this.flash(this.mood.accent_colors[0], 0.18);
+    this.shake(10);
+    Audio.sfxWave();
+  }
+  forceCrownClash() {
+    this.wave = 10;
+    this.enemies.length = 0;
+    this.enemiesSpawned = 0;
+    this.bossSpawned = false;
+    this.waveCleared = false;
+    this.waveTransition = 0;
+    this.syncRunMood(true);
+    this.seedPropsForWave();
+    this.spawnEliteEnemy();
+    this.addFloat('CROWN TEST', W / 2, H * 0.24, this.mood.primary_colors[0]);
   }
 
   spawnImpact(x, y) {
@@ -3945,6 +4124,7 @@ function loop(t) {
     game.draw(ctx);
     ctx.restore();
   }
+  updateQALab(dt);
   requestAnimationFrame(loop);
 }
 
@@ -3958,6 +4138,7 @@ function startGame() {
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('icon-stack').classList.remove('hidden');
   document.getElementById('touch-controls').classList.remove('hidden');
+  updateEmotionSignal();
   requestAnimationFrame(loop);
 }
 
@@ -3966,6 +4147,54 @@ function onGameOver(score, waves) {
   document.getElementById('final-score').textContent = score.toLocaleString();
   document.getElementById('final-wave').textContent = waves;
   document.getElementById('over-modal').classList.remove('hidden');
+}
+
+function updateEmotionSignal() {
+  const signal = document.getElementById('emotion-signal');
+  if (!signal) return;
+  const show = !!settings.emotionSignal && (!!running || !!game);
+  signal.classList.toggle('hidden', !show);
+  if (!show) return;
+  const moodId = game?.currentMoodId || settings.previewMood || 'tense';
+  const mood = MOODS[moodId] || MOODS.tense;
+  const glyph = document.getElementById('emotion-signal-glyph');
+  const label = document.getElementById('emotion-signal-label');
+  if (glyph) glyph.textContent = mood.emoji;
+  if (label) label.textContent = mood.display_name.toUpperCase();
+}
+
+function readMasterPeakDb() {
+  try {
+    const value = Audio.masterMeter?.getValue?.();
+    const n = Array.isArray(value) ? value[0] : value;
+    if (Number.isFinite(n)) return Math.max(-96, Math.min(12, n));
+  } catch (e) {}
+  return null;
+}
+
+function updateQALab(dt = 0) {
+  if (!DEBUG_MODE) return;
+  const lab = document.getElementById('qa-lab');
+  if (!lab) return;
+  lab.classList.remove('hidden');
+  QA_STATE.frames += 1;
+  QA_STATE.acc += Math.max(0, dt || 0);
+  if (QA_STATE.acc >= 0.5) {
+    QA_STATE.fps = QA_STATE.frames / QA_STATE.acc;
+    QA_STATE.frames = 0;
+    QA_STATE.acc = 0;
+  }
+  const react = Audio.music.reactivity;
+  const features = react?.activeFeatures ? [...react.activeFeatures].join(', ') : '—';
+  const peak = readMasterPeakDb();
+  const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+  set('qa-fps', QA_STATE.fps ? QA_STATE.fps.toFixed(1) : '—');
+  set('qa-mood', (game?.currentMoodId || settings.previewMood || '—').toUpperCase());
+  set('qa-intensity', react ? (react.intensity * 100).toFixed(0) + '%' : '—');
+  set('qa-peak', peak == null ? '—' : peak.toFixed(1));
+  set('qa-enemies', game ? String(game.enemies.filter(e => e.isAlive).length) : '—');
+  set('qa-props', game ? String(game.props.filter(p => !p.dead).length + game.weapons.filter(w => !w.dead).length) : '—');
+  set('qa-features', features || '—');
 }
 
 /* ---------- UI WIRING ---------- */
@@ -4047,6 +4276,8 @@ function setupSettingsUI() {
     document.body.classList.toggle('reduce-motion', v);
   });
   wireToggle('haptics-toggle', () => settings.haptics, v => { settings.haptics = v; if (v) haptic(15); });
+  wireToggle('signal-toggle', () => settings.emotionSignal, v => { settings.emotionSignal = v; updateEmotionSignal(); });
+  wireToggle('contrast-toggle', () => settings.contrastAid, v => { settings.contrastAid = v; document.body.classList.toggle('contrast-aid', v); });
   wireToggle('practice-toggle', () => settings.practiceMode, v => {
     settings.practiceMode = v;
     if (game && game.player?.isAlive) game.syncRunMood(true);
@@ -4073,12 +4304,16 @@ function setupSettingsUI() {
     document.getElementById('mute-toggle').classList.toggle('on', settings.mute);
     document.getElementById('motion-toggle').classList.toggle('on', settings.reduceMotion);
     document.getElementById('haptics-toggle').classList.toggle('on', settings.haptics);
+    document.getElementById('signal-toggle').classList.toggle('on', settings.emotionSignal);
+    document.getElementById('contrast-toggle').classList.toggle('on', settings.contrastAid);
     document.getElementById('practice-toggle').classList.toggle('on', settings.practiceMode);
     const arcSelectReset = document.getElementById('arc-select');
     const arcNameReset = document.getElementById('arc-name');
     if (arcSelectReset) arcSelectReset.value = settings.arcSelection;
     if (arcNameReset) arcNameReset.textContent = ARC_LIBRARY[settings.arcSelection]?.label || ARC_LIBRARY.firstNightOut.label;
     document.body.classList.toggle('reduce-motion', settings.reduceMotion);
+    document.body.classList.toggle('contrast-aid', settings.contrastAid);
+    updateEmotionSignal();
     setMood(settings.previewMood);
     buildMoodGrid();
   });
@@ -4125,6 +4360,7 @@ function init() {
   resize();
   applyMoodPalette(settings.previewMood);
   document.body.classList.toggle('reduce-motion', settings.reduceMotion);
+  document.body.classList.toggle('contrast-aid', settings.contrastAid);
   setupSettingsUI();
   buildMoodGrid();
 
@@ -4155,6 +4391,17 @@ function init() {
     document.getElementById('over-modal').classList.add('hidden');
     startGame();
   });
+
+  if (DEBUG_MODE) {
+    document.getElementById('qa-lab')?.classList.remove('hidden');
+    document.getElementById('qa-audio-stress')?.addEventListener('click', () => game?.runAudioStressTest());
+    document.getElementById('qa-full-meter')?.addEventListener('click', () => { if (game) { game.specialMeter = 100; game.specialReadyAnnounced = false; game.chargeSpecial(0); } });
+    document.getElementById('qa-grappler')?.addEventListener('click', () => game?.spawnEnemy('grappler'));
+    document.getElementById('qa-bottler')?.addEventListener('click', () => game?.spawnEnemy('trickster'));
+    document.getElementById('qa-crown')?.addEventListener('click', () => game?.forceCrownClash());
+    document.getElementById('qa-flash')?.addEventListener('click', () => { if (game) { game.flash(game.mood.accent_colors[0], 0.22); game.spawnSparkleBurst(); game.shake(8); } });
+  }
+  updateEmotionSignal();
 
   // Run a background sparkle loop on the start screen too
   function startScreenLoop() {
