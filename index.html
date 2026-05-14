@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-<title>Twin Fists V7 — Systems Completion Pass</title>
+<title>Twin Fists V9 — Arc Library, Capability AI & Emotional Stages</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -357,6 +357,37 @@
   .toggle.on { background: var(--c-primary); }
   .toggle.on::after { left: calc(100% - 1.218rem); background: var(--c-contrast); }
 
+
+  .setting-select {
+    width: 100%;
+    padding: 0.618rem 0.75rem;
+    background: rgba(0,0,0,0.55);
+    border: 2px solid var(--c-ui);
+    color: var(--c-ui);
+    font-family: 'VT323', monospace;
+    font-size: 1.2rem;
+    letter-spacing: 0.04em;
+    outline: none;
+  }
+  .setting-select:focus { border-color: var(--c-primary); }
+
+  #run-meta-badge {
+    position: absolute;
+    left: calc(var(--safe-left) + var(--s-2));
+    bottom: calc(var(--safe-bottom) + 9.6rem);
+    z-index: 12;
+    max-width: min(72vw, 18rem);
+    padding: 0.382rem 0.618rem;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.32);
+    color: var(--c-ui);
+    font-family: 'VT323', monospace;
+    font-size: 0.95rem;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+  }
+
   .modal-btn {
     width: 100%;
     padding: var(--s-1) var(--s-2);
@@ -460,6 +491,10 @@
     <button class="icon-btn" id="btn-settings" aria-label="Settings">⚙</button>
   </div>
 
+
+  <!-- Run identity badge: arc route + optional deterministic seed -->
+  <div id="run-meta-badge" class="hidden">ARC · FIRST NIGHT OUT</div>
+
   <!-- Touch controls -->
   <div id="touch-controls" class="hidden">
     <div class="dpad">
@@ -489,7 +524,7 @@
     <div class="modal">
       <div class="title-art">
         <h1>TWIN FISTS</h1>
-        <div class="sub">— A STREET BRAWLER · V7 —</div>
+        <div class="sub">— A STREET BRAWLER · V9 —</div>
       </div>
       <p style="margin-bottom: var(--s-2); line-height: 1.6;">
         The city's gone sideways. Thugs in the alley, neon humming overhead. You've got two fists, two feet, and one shot to clear the block.
@@ -498,7 +533,7 @@
         <strong>Controls:</strong><br>
         D-PAD to move &middot; PUNCH / KICK to brawl &middot; JUMP for kicks from above<br>
         PUNCH near props to pick up / throw. PUNCH near stunned enemies to grab / launch. KICK drops held props.<br>
-        When SPECIAL is full, press PUNCH + KICK together to unleash the current emotion's power.<br>V7 adds practice mood separation, refined hold attacks, pipe and bottle weapons, score drops, and richer emotion overlays.<br>
+        When SPECIAL is full, press PUNCH + KICK together to unleash the current emotion's power.<br>V8 adds a feature-driven music director, explicit juggle launches, clearer combo pose families, and a true Crown Clash boss encounter.<br>
         <em style="opacity:0.7;">Desktop: arrows / WASD, J=punch/use, K=kick/drop, J+K=special, space=jump</em>
       </p>
       <button class="modal-btn" id="btn-start">ENTER THE STREETS</button>
@@ -516,7 +551,20 @@
         <label>EMOTIONAL FEEL <span class="val" id="mood-name">—</span></label>
         <div class="mood-grid" id="mood-grid"></div>
         <p class="small-print" style="text-align:left; margin-top:0.618rem;">
-          Runs follow an authored emotional arc across waves. This selection sets the preview palette and becomes the locked run mood only when Practice Mood is enabled. V7 also completes hold-attack tuning, weapons, drop tables, and richer per-emotion atmosphere.
+          Runs follow an authored emotional arc across waves. This selection sets the preview palette and becomes the locked run mood only when Practice Mood is enabled. V8 keeps those systems and adds a richer music-feature director, Crown Clash boss pacing, and explicit juggle windows for launcher follow-ups.
+        </p>
+      </div>
+
+      <div class="setting-row">
+        <label>ARC ROUTE <span class="val" id="arc-name">FIRST NIGHT OUT</span></label>
+        <select class="setting-select" id="arc-select" aria-label="Arc route">
+          <option value="firstNightOut">First Night Out</option>
+          <option value="slowBurn">Slow Burn</option>
+          <option value="ambush">Ambush</option>
+          <option value="random">Random Curated Arc</option>
+        </select>
+        <p class="small-print" style="text-align:left; margin-top:0.618rem;">
+          Story runs follow one curated emotional arc. Use Random Curated Arc for replay variety; add <code>?seed=1234</code> to the URL for repeatable runs.
         </p>
       </div>
 
@@ -668,14 +716,111 @@ const MOODS = {
 
 const MOOD_ORDER = ['bright', 'calm', 'mysterious', 'tense', 'triumphant'];
 
+/* ---------- DETERMINISTIC RNG + VARIANT SETS ---------- */
+const nativeRandom = Math.random.bind(Math);
+const RNG = (() => {
+  const qs = new URLSearchParams(location.search);
+  const rawSeed = qs.get('seed');
+  const normalizedSeed = rawSeed == null || rawSeed === '' ? null : String(rawSeed);
+  let state = normalizedSeed == null ? 0 : hashSeed(normalizedSeed);
+  function hashSeed(input) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < input.length; i++) {
+      h ^= input.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0 || 0x6d2b79f5;
+  }
+  function random() {
+    if (normalizedSeed == null) return nativeRandom();
+    state += 0x6D2B79F5;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  return {
+    seed: normalizedSeed,
+    deterministic: normalizedSeed != null,
+    random,
+    label: normalizedSeed == null ? 'LIVE' : normalizedSeed,
+  };
+})();
+
+class CombinatorialVariantSet {
+  constructor(id, entries = []) {
+    this.id = id;
+    this.entries = entries.map(entry => ({ ...entry }));
+  }
+  choose(context = {}) {
+    const eligible = this.entries.filter(entry => {
+      if (entry.exclude?.includes?.(context.mood)) return false;
+      if (entry.requireMood && !entry.requireMood.includes(context.mood)) return false;
+      if (entry.minWave && (context.wave || 1) < entry.minWave) return false;
+      if (entry.maxWave && (context.wave || 1) > entry.maxWave) return false;
+      if (entry.when && !entry.when(context)) return false;
+      return (Number(entry.weight) || 0) > 0;
+    });
+    const pool = eligible.length ? eligible : this.entries.filter(entry => (Number(entry.weight) || 0) > 0);
+    const total = pool.reduce((sum, entry) => sum + Math.max(0, Number(entry.weight) || 0), 0);
+    if (!total) return null;
+    let roll = RNG.random() * total;
+    for (const entry of pool) {
+      roll -= Math.max(0, Number(entry.weight) || 0);
+      if (roll <= 0) return entry.value ?? entry.id ?? null;
+    }
+    const fallback = pool[pool.length - 1];
+    return fallback?.value ?? fallback?.id ?? null;
+  }
+}
+
 /* ---------- RUN ARC + GAMEPLAY MODULATORS ---------- */
-const RUN_ARC = [
-  { fromWave: 1, toWave: 2, mood: 'bright', banner: 'SPARK' },
-  { fromWave: 3, toWave: 3, mood: 'calm', banner: 'BREATHE' },
-  { fromWave: 4, toWave: 5, mood: 'mysterious', banner: 'DRIFT' },
-  { fromWave: 6, toWave: 8, mood: 'tense', banner: 'RISING DREAD' },
-  { fromWave: 9, toWave: Infinity, mood: 'triumphant', banner: 'CROWN' },
-];
+const ARC_LIBRARY = {
+  firstNightOut: {
+    id: 'firstNightOut',
+    label: 'FIRST NIGHT OUT',
+    stages: [
+      { fromWave: 1, toWave: 2, mood: 'bright', banner: 'SPARK' },
+      { fromWave: 3, toWave: 3, mood: 'calm', banner: 'BREATHE' },
+      { fromWave: 4, toWave: 5, mood: 'mysterious', banner: 'DRIFT' },
+      { fromWave: 6, toWave: 8, mood: 'tense', banner: 'RISING DREAD' },
+      { fromWave: 9, toWave: Infinity, mood: 'triumphant', banner: 'CROWN' },
+    ],
+  },
+  slowBurn: {
+    id: 'slowBurn',
+    label: 'SLOW BURN',
+    stages: [
+      { fromWave: 1, toWave: 2, mood: 'calm', banner: 'HUSH' },
+      { fromWave: 3, toWave: 4, mood: 'mysterious', banner: 'STATIC' },
+      { fromWave: 5, toWave: 7, mood: 'tense', banner: 'PRESSURE' },
+      { fromWave: 8, toWave: 9, mood: 'bright', banner: 'SECOND WIND' },
+      { fromWave: 10, toWave: Infinity, mood: 'triumphant', banner: 'CROWN' },
+    ],
+  },
+  ambush: {
+    id: 'ambush',
+    label: 'AMBUSH',
+    stages: [
+      { fromWave: 1, toWave: 1, mood: 'bright', banner: 'FALSE CALM' },
+      { fromWave: 2, toWave: 4, mood: 'tense', banner: 'AMBUSH' },
+      { fromWave: 5, toWave: 6, mood: 'mysterious', banner: 'SMOKE' },
+      { fromWave: 7, toWave: 8, mood: 'calm', banner: 'REGROUP' },
+      { fromWave: 9, toWave: Infinity, mood: 'triumphant', banner: 'CROWN' },
+    ],
+  },
+};
+
+const ARC_VARIANTS = new CombinatorialVariantSet('arc_routes', [
+  { value: 'firstNightOut', weight: 44 },
+  { value: 'slowBurn', weight: 30 },
+  { value: 'ambush', weight: 26 },
+]);
+
+function chooseArcId(selection = settings.arcSelection || 'firstNightOut') {
+  if (selection === 'random') return ARC_VARIANTS.choose({ mood: null, wave: 1 }) || 'firstNightOut';
+  return ARC_LIBRARY[selection] ? selection : 'firstNightOut';
+}
 
 const EMOTION_GAMEPLAY = {
   bright: {
@@ -684,7 +829,7 @@ const EMOTION_GAMEPLAY = {
     enemySpeedMult: 0.92,
     attackCadenceMult: 1.12,
     hitBurstCount: 8,
-    archetypeWeights: { weak: 0.64, fast: 0.24, trickster: 0.08, bruiser: 0.04 },
+    archetypeWeights: { weak: 0.64, fast: 0.24, trickster: 0.08, bruiser: 0.04, grappler: 0.00 },
   },
   calm: {
     spawnInterval: [1.7, 2.45],
@@ -692,7 +837,7 @@ const EMOTION_GAMEPLAY = {
     enemySpeedMult: 0.86,
     attackCadenceMult: 1.25,
     hitBurstCount: 7,
-    archetypeWeights: { weak: 0.54, fast: 0.24, trickster: 0.16, bruiser: 0.06 },
+    archetypeWeights: { weak: 0.54, fast: 0.24, trickster: 0.16, bruiser: 0.06, grappler: 0.00 },
   },
   mysterious: {
     spawnInterval: [1.35, 2.0],
@@ -700,7 +845,7 @@ const EMOTION_GAMEPLAY = {
     enemySpeedMult: 1.02,
     attackCadenceMult: 0.96,
     hitBurstCount: 10,
-    archetypeWeights: { weak: 0.28, fast: 0.34, trickster: 0.26, bruiser: 0.12 },
+    archetypeWeights: { weak: 0.26, fast: 0.32, trickster: 0.26, bruiser: 0.12, grappler: 0.04 },
   },
   tense: {
     spawnInterval: [1.0, 1.6],
@@ -708,7 +853,7 @@ const EMOTION_GAMEPLAY = {
     enemySpeedMult: 1.14,
     attackCadenceMult: 0.82,
     hitBurstCount: 12,
-    archetypeWeights: { weak: 0.24, fast: 0.34, trickster: 0.18, bruiser: 0.24 },
+    archetypeWeights: { weak: 0.20, fast: 0.30, trickster: 0.18, bruiser: 0.24, grappler: 0.08 },
   },
   triumphant: {
     spawnInterval: [0.9, 1.45],
@@ -716,7 +861,7 @@ const EMOTION_GAMEPLAY = {
     enemySpeedMult: 1.08,
     attackCadenceMult: 0.88,
     hitBurstCount: 14,
-    archetypeWeights: { weak: 0.18, fast: 0.30, trickster: 0.20, bruiser: 0.32 },
+    archetypeWeights: { weak: 0.14, fast: 0.26, trickster: 0.20, bruiser: 0.30, grappler: 0.10 },
   },
 };
 
@@ -819,64 +964,119 @@ const PROP_DROP_TABLES = {
 };
 
 function rollDropTable(table) {
-  const entries = Array.isArray(table) ? table : [];
-  const total = entries.reduce((sum, entry) => sum + Math.max(0, Number(entry.weight) || 0), 0);
-  if (!total) return null;
-  let roll = Math.random() * total;
-  for (const entry of entries) {
-    roll -= Math.max(0, Number(entry.weight) || 0);
-    if (roll <= 0) return entry.item ?? null;
-  }
-  return entries[entries.length - 1]?.item ?? null;
+  const entries = Array.isArray(table) ? table.map((entry, idx) => ({
+    id: `drop_${idx}`,
+    value: entry.item ?? null,
+    weight: entry.weight,
+  })) : [];
+  return new CombinatorialVariantSet('drop_table', entries).choose({ mood: null, wave: 1 });
 }
+
+const ENEMY_CAPABILITIES = {
+  quick_jab: {
+    id: 'quick_jab',
+    label: 'QUICK JAB',
+    attackType: 'punch',
+    windup: 0.22,
+    cooldownMult: 0.86,
+    visualTelegraph: 'flash_red',
+  },
+  dash_close: {
+    id: 'dash_close',
+    label: 'DASH CLOSE',
+    movement: 'dash',
+    activeTime: 0.20,
+    visualTelegraph: 'crouch_pose',
+  },
+  side_step: {
+    id: 'side_step',
+    label: 'SIDE STEP',
+    movement: 'sidestep',
+    activeTime: 0.24,
+    visualTelegraph: 'shift_pose',
+  },
+  bottle_throw: {
+    id: 'bottle_throw',
+    label: 'BOTTLE THROW',
+    attackType: 'projectile_bottle',
+    windup: 0.46,
+    cooldownMult: 1.18,
+    preferredRange: [72, 178],
+    visualTelegraph: 'wind_arm_back',
+  },
+  grab_player: {
+    id: 'grab_player',
+    label: 'GRAB',
+    attackType: 'grab_player',
+    windup: 0.52,
+    cooldownMult: 1.35,
+    preferredRange: [0, 38],
+    visualTelegraph: 'arms_open',
+  },
+  slam: {
+    id: 'slam',
+    label: 'SLAM',
+    attackType: 'slam',
+    windup: 0.30,
+    cooldownMult: 1.18,
+    preferredRange: [0, 40],
+    visualTelegraph: 'heavy_pose',
+  },
+};
 
 const ENEMY_ARCHETYPES = {
   weak: {
     hpMult: 0.86, speedMult: 1.00, sizeMult: 0.96, label: 'THUG',
     style: 'standard', damageMult: 0.96, telegraphMult: 1.00,
     preferredKickChance: 0.36, dashChance: 0.00, sidestepChance: 0.00,
+    capabilities: ['quick_jab'],
   },
   fast: {
     hpMult: 0.70, speedMult: 1.34, sizeMult: 0.88, label: 'SPRINTER',
     style: 'sprinter', damageMult: 0.84, telegraphMult: 0.82,
     preferredKickChance: 0.28, dashChance: 0.52, sidestepChance: 0.04,
+    capabilities: ['quick_jab', 'dash_close'],
   },
   trickster: {
     hpMult: 0.82, speedMult: 1.18, sizeMult: 0.93, label: 'TRICKSTER',
     style: 'trickster', damageMult: 0.92, telegraphMult: 0.92,
     preferredKickChance: 0.62, dashChance: 0.14, sidestepChance: 0.46,
+    capabilities: ['quick_jab', 'side_step', 'bottle_throw'],
   },
   bruiser: {
     hpMult: 1.46, speedMult: 0.76, sizeMult: 1.14, label: 'BRUISER',
     style: 'bruiser', damageMult: 1.28, telegraphMult: 1.28,
     preferredKickChance: 0.66, dashChance: 0.00, sidestepChance: 0.00,
+    capabilities: ['slam'],
+  },
+  grappler: {
+    hpMult: 1.34, speedMult: 0.84, sizeMult: 1.10, label: 'GRAPPLER',
+    style: 'grappler', damageMult: 1.18, telegraphMult: 1.42,
+    preferredKickChance: 0.18, dashChance: 0.00, sidestepChance: 0.00,
+    capabilities: ['grab_player', 'slam'],
   },
   boss: {
     hpMult: 3.25, speedMult: 0.72, sizeMult: 1.48, label: 'ENFORCER',
     style: 'boss', damageMult: 1.55, telegraphMult: 1.45,
     preferredKickChance: 0.74, dashChance: 0.08, sidestepChance: 0.00,
+    capabilities: ['quick_jab', 'dash_close', 'slam'],
     boss: true,
   },
 };
 
-function pickWeighted(weights) {
-  const entries = Object.entries(weights || {});
-  const total = entries.reduce((sum, [, weight]) => sum + Math.max(0, weight), 0) || 1;
-  let roll = Math.random() * total;
-  for (const [key, weight] of entries) {
-    roll -= Math.max(0, weight);
-    if (roll <= 0) return key;
-  }
-  return entries[entries.length - 1]?.[0] || 'weak';
+function pickWeighted(weights, context = {}) {
+  const entries = Object.entries(weights || {}).map(([id, weight]) => ({ id, value: id, weight }));
+  return new CombinatorialVariantSet('weighted_map', entries).choose(context) || entries[0]?.id || 'weak';
 }
 
 
-/* ---------- SETTINGS STORE ---------- */
+/* ---------- SETTINGS STORE/* ---------- SETTINGS STORE ---------- */
 const SETTINGS_KEY = 'twinfists.settings.v1';
 const DEFAULT_SETTINGS = {
   musicVol: 60, sfxVol: 75,
   previewMood: 'tense',
   practiceMode: false,
+  arcSelection: 'firstNightOut',
   mute: false, reduceMotion: false, haptics: true,
 };
 function loadSettings() {
@@ -909,6 +1109,40 @@ function applyMoodPalette(moodId) {
   root.style.setProperty('--c-bg-2',      m.background_colors[0]);
   root.style.setProperty('--c-ui',        m.ui_emphasis_colors[0]);
   root.style.setProperty('--c-particle',  m.particle_colors[0]);
+}
+
+/* ---------- MUSIC FEATURE CATALOG ---------- */
+const MUSIC_FEATURES = [
+  {
+    id: 'accent_stabs', category: 'harmonic',
+    requiredIntensity: 0.55, releaseIntensity: 0.46,
+    eligible: ['bright', 'mysterious', 'tense', 'triumphant'], forbidden: [],
+    maxGain: 0.28, priority: 70,
+  },
+  {
+    id: 'low_hp_throb', category: 'bass',
+    requiredIntensity: 0.22, releaseIntensity: 0.12,
+    eligible: ['calm', 'mysterious', 'tense', 'triumphant'], forbidden: ['bright'],
+    maxGain: 0.18, priority: 95, trigger: 'low_hp',
+  },
+  {
+    id: 'tension_drone', category: 'atmosphere',
+    requiredIntensity: 0.44, releaseIntensity: 0.34,
+    eligible: ['mysterious', 'tense'], forbidden: [],
+    maxGain: 0.14, priority: 60,
+  },
+  {
+    id: 'streak_stinger', category: 'fx',
+    requiredIntensity: 0.30, releaseIntensity: 0.00,
+    eligible: ['bright', 'mysterious', 'tense', 'triumphant'], forbidden: ['calm'],
+    maxGain: 1, priority: 100, trigger: 'hit_streak_5', oneshot: true,
+  },
+];
+
+function musicFeatureAllowed(feature, moodId) {
+  if (feature.forbidden?.includes(moodId)) return false;
+  if (feature.eligible?.length && !feature.eligible.includes(moodId)) return false;
+  return true;
 }
 
 /* ---------- AUDIO ENGINE ---------- */
@@ -1020,15 +1254,27 @@ const Audio = {
       filterEnvelope: { attack: 0.005, decay: 0.18, sustain: 0.05, release: 0.2, baseFrequency: 120, octaves: 1.4 },
       volume: -18,
     }).connect(pulseGain);
+    const droneGain = new Tone.Gain(0).connect(this.musicReverb);
+    const drone = new Tone.MonoSynth({
+      oscillator: { type: m.timbre_profile.pad === 'sine' ? 'triangle' : m.timbre_profile.pad },
+      envelope: { attack: 0.35, decay: 0.45, sustain: 0.42, release: 0.85 },
+      filterEnvelope: { attack: 0.18, decay: 0.55, sustain: 0.28, release: 0.75, baseFrequency: 90, octaves: 1.2 },
+      volume: -24,
+    }).connect(droneGain);
 
-    this.music.synths.push(bass, pad, lead, kick, snare, hat, accentGain, pulseGain, accent, pulse);
+    this.music.synths.push(bass, pad, lead, kick, snare, hat, accentGain, pulseGain, droneGain, accent, pulse, drone);
     this.music.reactivity = {
       intensity: 0,
       lowHp: false,
       accentGain,
       pulseGain,
+      droneGain,
       accent,
       pulse,
+      drone,
+      activeFeatures: new Set(),
+      featureState: Object.create(null),
+      lastFeatureReconcileAt: 0,
       lastStreakStingerAt: 0,
       lastIntensityFloatAt: 0,
     };
@@ -1059,7 +1305,7 @@ const Audio = {
       const i = Math.floor(bar / barsPerChord) % progression.length;
       const degree = progression[i];
       const chord = buildChord(rootMidi, scaleSemis, degree);
-      if (Math.random() < density) {
+      if (RNG.random() < density) {
         const note = chord[arpStep % chord.length];
         const transposed = Tone.Frequency(note).transpose(12).toNote();
         lead.triggerAttackRelease(transposed, '16n', time, 0.4);
@@ -1076,7 +1322,7 @@ const Audio = {
       // Snare on 3 & 7
       if (step === 2 || step === 6) snare.triggerAttackRelease('16n', time, 0.5);
       // Hat
-      if (Math.random() < density * 0.9) hat.triggerAttackRelease('32n', time, 0.4);
+      if (RNG.random() < density * 0.9) hat.triggerAttackRelease('32n', time, 0.4);
       beat++;
     }, '8n').start(0);
 
@@ -1085,24 +1331,31 @@ const Audio = {
     let stabStep = 0;
     const intensityStabs = new Tone.Loop((time) => {
       const react = this.music.reactivity;
-      if (!react || react.intensity < 0.55) return;
+      if (!react || !react.activeFeatures?.has('accent_stabs')) return;
       const bar = Math.floor(Tone.Transport.position.toString().split(':')[0]);
       const i = Math.floor(bar / barsPerChord) % progression.length;
       const degree = progression[i];
       const chord = buildChord(rootMidi, scaleSemis, degree).map(note => Tone.Frequency(note).transpose(12).toNote());
       const gate = react.intensity > 0.82 ? 0.82 : 0.56;
-      if (Math.random() < gate) react.accent.triggerAttackRelease(chord, '16n', time, 0.26 + react.intensity * 0.18);
+      if (RNG.random() < gate) react.accent.triggerAttackRelease(chord, '16n', time, 0.26 + react.intensity * 0.18);
       stabStep++;
     }, '2n').start('0:1:0');
 
     const lowHpPulse = new Tone.Loop((time) => {
       const react = this.music.reactivity;
-      if (!react || !react.lowHp) return;
+      if (!react || !react.activeFeatures?.has('low_hp_throb')) return;
       const rootPulse = Tone.Frequency(m.chord_profile.root).transpose(-24).toNote();
       react.pulse.triggerAttackRelease(rootPulse, '8n', time, 0.35);
     }, '1n').start('0:0:0');
 
-    this.music.parts.push(chordPart, arp, drumLoop, intensityStabs, lowHpPulse);
+    const tensionDrone = new Tone.Loop((time) => {
+      const react = this.music.reactivity;
+      if (!react || !react.activeFeatures?.has('tension_drone')) return;
+      const rootDrone = Tone.Frequency(m.chord_profile.root).transpose(-12).toNote();
+      react.drone.triggerAttackRelease(rootDrone, '2n', time, 0.22 + react.intensity * 0.15);
+    }, '2m').start('0:0:0');
+
+    this.music.parts.push(chordPart, arp, drumLoop, intensityStabs, lowHpPulse, tensionDrone);
     this.music.active = true;
   },
   stopMusic() {
@@ -1118,15 +1371,68 @@ const Audio = {
     const intensity = Math.max(0, Math.min(1, Number(snapshot.intensity || 0)));
     const hpRatio = Math.max(0, Math.min(1, Number(snapshot.hpRatio ?? 1)));
     const hitStreak = Math.max(0, Number(snapshot.hitStreak || 0));
+    const moodId = snapshot.moodId || 'tense';
+    const lowHp = hpRatio <= 0.25;
     react.intensity = intensity;
-    react.lowHp = hpRatio <= 0.25;
+    react.lowHp = lowHp;
 
-    const stabGain = intensity <= 0.48 ? 0 : Math.min(0.28, (intensity - 0.48) * 0.52);
-    react.accentGain.gain.rampTo(stabGain, 0.18);
-    react.pulseGain.gain.rampTo(react.lowHp ? 0.18 : 0, 0.22);
-
+    // Reconcile metadata-driven feature states on a bounded cadence. This is the
+    // lightweight in-browser MusicDirector: thresholds, hysteresis, mood filters,
+    // one-shot triggers, and per-category caps all live here instead of ad hoc branches.
     const now = performance.now();
-    if (hitStreak >= 5 && now - react.lastStreakStingerAt > 2600) {
+    if (now - react.lastFeatureReconcileAt >= 420) {
+      react.lastFeatureReconcileAt = now;
+      const desired = [];
+      for (const feature of MUSIC_FEATURES) {
+        if (!musicFeatureAllowed(feature, moodId)) {
+          react.featureState[feature.id] = false;
+          continue;
+        }
+        const wasActive = !!react.featureState[feature.id];
+        const triggerSatisfied = feature.trigger === 'low_hp'
+          ? lowHp
+          : feature.trigger === 'hit_streak_5'
+            ? hitStreak >= 5
+            : true;
+        const threshold = wasActive ? feature.releaseIntensity : feature.requiredIntensity;
+        const active = triggerSatisfied && intensity >= threshold;
+        react.featureState[feature.id] = active;
+        if (active) desired.push(feature);
+      }
+
+      // Keep the active loop set bounded by category. One feature per loop category
+      // in this build; fx one-shots do not consume loop budget.
+      const picked = [];
+      const categoryUse = new Set();
+      desired
+        .filter(feature => !feature.oneshot)
+        .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+        .forEach(feature => {
+          if (categoryUse.has(feature.category)) return;
+          categoryUse.add(feature.category);
+          picked.push(feature.id);
+        });
+      react.activeFeatures = new Set(picked);
+    }
+
+    const stabFeature = MUSIC_FEATURES.find(feature => feature.id === 'accent_stabs');
+    const pulseFeature = MUSIC_FEATURES.find(feature => feature.id === 'low_hp_throb');
+    const droneFeature = MUSIC_FEATURES.find(feature => feature.id === 'tension_drone');
+    const stabGain = react.activeFeatures.has('accent_stabs')
+      ? Math.min(stabFeature.maxGain, Math.max(0.05, (intensity - 0.44) * 0.52))
+      : 0;
+    const pulseGain = react.activeFeatures.has('low_hp_throb')
+      ? pulseFeature.maxGain
+      : 0;
+    const droneGain = react.activeFeatures.has('tension_drone')
+      ? Math.min(droneFeature.maxGain, 0.05 + intensity * 0.10)
+      : 0;
+    react.accentGain.gain.rampTo(stabGain, 0.18);
+    react.pulseGain.gain.rampTo(pulseGain, 0.22);
+    react.droneGain.gain.rampTo(droneGain, 0.32);
+
+    const stingerActive = !!react.featureState.streak_stinger;
+    if (stingerActive && now - react.lastStreakStingerAt > 2600) {
       react.lastStreakStingerAt = now;
       this.sfxStreak();
     }
@@ -1302,7 +1608,7 @@ class EventRandomizer {
   constructor() { this.events = []; }
   register(evt) {
     this.events.push(Object.assign({
-      id: 'evt_' + Math.random().toString(36).slice(2,8),
+      id: 'evt_' + RNG.random().toString(36).slice(2,8),
       rarityTier: 'common',
       probability: 0.5,
       cooldownMs: 0,
@@ -1320,7 +1626,7 @@ class EventRandomizer {
       if (!e.trigger(ctxData)) continue;
       // exponential probability: p_eff = 1 - exp(-lambda * probability)
       const pEff = 1 - Math.exp(-e.lambda * e.probability);
-      if (Math.random() < pEff) {
+      if (RNG.random() < pEff) {
         e.lastFired = now;
         e.effect(ctxData);
       }
@@ -1449,7 +1755,7 @@ class Fighter {
     this.knockedTime = 0;
     this.deathTime = -1;
     this.flipFlash = 0;
-    this.bobPhase = Math.random() * Math.PI * 2;
+    this.bobPhase = RNG.random() * Math.PI * 2;
     this.lastAttackAt = 0;
     this.attackStep = 1;
     this.attackConnected = false;
@@ -1461,7 +1767,7 @@ class Fighter {
       punch: { step: 0, lastHitAt: -Infinity },
       kick:  { step: 0, lastHitAt: -Infinity },
     };
-    this.aiCooldown = 0.5 + Math.random() * 0.8;
+    this.aiCooldown = 0.5 + RNG.random() * 0.8;
     this.aiState = 'approach';
     this.aiTimer = 0;
     this.aiTelegraphTime = 0;
@@ -1470,6 +1776,10 @@ class Fighter {
     this.aiCadenceMult = opts.aiCadenceMult || 1;
     this.archetype = opts.archetype || null;
     this.enemyProfile = ENEMY_ARCHETYPES[this.archetype] || ENEMY_ARCHETYPES.weak;
+    this.capabilityIds = Array.isArray(this.enemyProfile.capabilities) ? this.enemyProfile.capabilities.slice() : [];
+    this.pendingCapabilityId = null;
+    this.projectileCooldown = 1.4 + RNG.random() * 0.8;
+    this.grappleCooldown = 1.8 + RNG.random() * 0.8;
     this.enemyDamageMult = opts.enemyDamageMult || this.enemyProfile.damageMult || 1;
     this.aiTelegraphMult = opts.aiTelegraphMult || this.enemyProfile.telegraphMult || 1;
     this.preferredKickChance = opts.preferredKickChance ?? this.enemyProfile.preferredKickChance ?? 0.4;
@@ -1477,10 +1787,12 @@ class Fighter {
     this.sidestepChance = opts.sidestepChance ?? this.enemyProfile.sidestepChance ?? 0;
     this.isBoss = !!(opts.isBoss || this.enemyProfile.boss);
     this.dashTime = 0;
-    this.dashCooldown = 0.45 + Math.random() * 0.6;
+    this.dashCooldown = 0.45 + RNG.random() * 0.6;
     this.sidestepTime = 0;
-    this.sidestepDir = Math.random() < 0.5 ? -1 : 1;
+    this.sidestepDir = RNG.random() < 0.5 ? -1 : 1;
     this.stunTime = 0;
+    this.juggleTime = 0;
+    this.airVulnerable = false;
     this.grabbedBy = null;
     this.isThrown = false;
     this.throwVX = 0;
@@ -1585,6 +1897,35 @@ class Fighter {
     memory.lastHitAt = performance.now();
     this.attackConnected = true;
   }
+  launchJuggle(knockDir = this.facing || 1) {
+    if (this.hp <= 0 || this.isBoss) return false;
+    this.state = 'knocked';
+    this.knockedTime = Math.max(this.knockedTime || 0, 0.54);
+    this.z = Math.max(this.z || 0, 0.1);
+    this.vz = Math.max(this.vz || 0, 190);
+    this.knockX = knockDir * 52;
+    this.stunTime = Math.max(this.stunTime || 0, 1.0);
+    this.juggleTime = Math.max(this.juggleTime || 0, 0.72);
+    this.airVulnerable = true;
+    return true;
+  }
+  chooseCapability(target, dist) {
+    if (this.isPlayer || !target?.isAlive) return null;
+    const caps = this.capabilityIds.map(id => ENEMY_CAPABILITIES[id]).filter(Boolean);
+    const eligible = caps.filter(cap => {
+      const [minR, maxR] = cap.preferredRange || [0, Infinity];
+      if (dist < minR || dist > maxR) return false;
+      if (cap.id === 'bottle_throw' && this.projectileCooldown > 0) return false;
+      if (cap.id === 'grab_player' && this.grappleCooldown > 0) return false;
+      return true;
+    });
+    if (!eligible.length) return null;
+    const variants = new CombinatorialVariantSet('enemy_capability', eligible.map(cap => ({
+      value: cap.id,
+      weight: cap.id === 'grab_player' ? 40 : cap.id === 'bottle_throw' ? 34 : 26,
+    })));
+    return variants.choose({ mood: null, wave: 1 }) || eligible[0].id;
+  }
   jump() {
     if (this.z > 0 || this.state === 'knocked' || this.state === 'hurt') return false;
     this.vz = 280;
@@ -1624,8 +1965,14 @@ class Fighter {
   update(dt, world) {
     this.bobPhase += dt * 8;
     if (this.stunTime > 0) this.stunTime = Math.max(0, this.stunTime - dt);
+    if (this.juggleTime > 0) {
+      this.juggleTime = Math.max(0, this.juggleTime - dt);
+      if (this.juggleTime === 0) this.airVulnerable = false;
+    }
     if (this.invulnTime > 0) this.invulnTime = Math.max(0, this.invulnTime - dt);
     if (this.dashCooldown > 0) this.dashCooldown = Math.max(0, this.dashCooldown - dt);
+    if (this.projectileCooldown > 0) this.projectileCooldown = Math.max(0, this.projectileCooldown - dt);
+    if (this.grappleCooldown > 0) this.grappleCooldown = Math.max(0, this.grappleCooldown - dt);
     if (this.dashTime > 0) this.dashTime = Math.max(0, this.dashTime - dt);
     if (this.sidestepTime > 0) this.sidestepTime = Math.max(0, this.sidestepTime - dt);
 
@@ -1752,17 +2099,25 @@ class Fighter {
           my = this.sidestepDir * 1.08;
           this.aiState = 'sidestep';
         } else if (dist > 30) {
-          const canDash = this.dashChance > 0 && this.dashCooldown <= 0 && dist < 190 && Math.random() < this.dashChance * dt * 2.4;
-          const canSidestep = this.sidestepChance > 0 && dist < 110 && Math.random() < this.sidestepChance * dt * 2.2;
-          if (canDash) {
-            this.dashTime = 0.18 + Math.random() * 0.08;
-            this.dashCooldown = 1.05 + Math.random() * 0.8;
+          const canProjectile = this.capabilityIds.includes('bottle_throw') && this.projectileCooldown <= 0 && dist >= 72 && dist <= 178 && RNG.random() < dt * 0.85;
+          const canDash = this.dashChance > 0 && this.dashCooldown <= 0 && dist < 190 && RNG.random() < this.dashChance * dt * 2.4;
+          const canSidestep = this.sidestepChance > 0 && dist < 110 && RNG.random() < this.sidestepChance * dt * 2.2;
+          if (canProjectile) {
+            this.pendingCapabilityId = 'bottle_throw';
+            this.pendingAttackType = null;
+            this.aiTelegraphTotal = (ENEMY_CAPABILITIES.bottle_throw.windup + RNG.random() * 0.14) * (this.aiTelegraphMult || 1);
+            this.aiTelegraphTime = this.aiTelegraphTotal;
+            this.aiState = 'projectile-telegraph';
+            mx = 0; my = 0;
+          } else if (canDash) {
+            this.dashTime = 0.18 + RNG.random() * 0.08;
+            this.dashCooldown = 1.05 + RNG.random() * 0.8;
             mx = Math.sign(dx || this.facing) * 1.55;
             my = Math.sign(dy) * 0.42;
             this.aiState = 'dash';
           } else if (canSidestep) {
-            this.sidestepTime = 0.22 + Math.random() * 0.18;
-            this.sidestepDir = Math.random() < 0.5 ? -1 : 1;
+            this.sidestepTime = 0.22 + RNG.random() * 0.18;
+            this.sidestepDir = RNG.random() < 0.5 ? -1 : 1;
             mx = -Math.sign(dx || this.facing) * 0.48;
             my = this.sidestepDir * 1.08;
             this.aiState = 'sidestep';
@@ -1778,18 +2133,34 @@ class Fighter {
             this.aiTelegraphTime -= dt;
             this.aiState = 'telegraph';
             if (this.aiTelegraphTime <= 0 && target.isAlive) {
-              this.startAttack(this.pendingAttackType || (Math.random() < this.preferredKickChance ? 'kick' : 'punch'));
+              const capability = ENEMY_CAPABILITIES[this.pendingCapabilityId];
+              if (capability?.id === 'bottle_throw') {
+                world.throwEnemyBottle(this);
+                this.projectileCooldown = 2.6 + RNG.random() * 1.2;
+                this.pendingAttackType = null;
+              } else {
+                const attackType = capability?.id === 'grab_player' || capability?.id === 'slam'
+                  ? 'punch'
+                  : (this.pendingAttackType || (RNG.random() < this.preferredKickChance ? 'kick' : 'punch'));
+                this.startAttack(attackType);
+                if (capability?.id === 'grab_player') this.grappleCooldown = 3.1 + RNG.random() * 1.0;
+              }
               this.pendingAttackType = null;
               this.aiTelegraphTotal = 0;
               this.aiState = 'attack';
               const bossDelay = this.isBoss ? 0.18 : 0;
-              this.aiTimer = (0.8 + bossDelay + Math.random() * 1.2) * (this.aiCadenceMult || 1);
+              const cooldownMult = capability?.cooldownMult || 1;
+              this.aiTimer = (0.8 + bossDelay + RNG.random() * 1.2) * (this.aiCadenceMult || 1) * cooldownMult;
             }
           } else if (this.aiTimer <= 0 && target.isAlive) {
-            this.pendingAttackType = Math.random() < this.preferredKickChance ? 'kick' : 'punch';
-            this.aiTelegraphTotal = (0.28 + Math.random() * 0.18) * (this.aiTelegraphMult || 1);
+            this.pendingCapabilityId = this.chooseCapability(target, dist);
+            const capability = ENEMY_CAPABILITIES[this.pendingCapabilityId];
+            this.pendingAttackType = capability?.attackType && capability.attackType !== 'projectile_bottle' && capability.attackType !== 'grab_player' && capability.attackType !== 'slam'
+              ? capability.attackType
+              : (RNG.random() < this.preferredKickChance ? 'kick' : 'punch');
+            this.aiTelegraphTotal = ((capability?.windup ?? 0.28) + RNG.random() * 0.18) * (this.aiTelegraphMult || 1);
             this.aiTelegraphTime = this.aiTelegraphTotal;
-            this.aiState = 'telegraph';
+            this.aiState = capability?.id === 'bottle_throw' ? 'projectile-telegraph' : capability?.id === 'grab_player' ? 'grab-telegraph' : 'telegraph';
           }
         }
         if (dx !== 0) this.facing = Math.sign(dx);
@@ -1874,14 +2245,28 @@ class Fighter {
       const swing = Math.sin(phase * Math.PI);
       const stepBoost = Math.max(0, (this.attackStep || 1) - 1) * 5;
       if (this.attackType === 'punch') {
-        // Extended arm / pipe swing.
+        // V8: visibly distinct jab / cross / hook families instead of a single lengthened arm.
+        const poseStep = Math.max(1, Math.min(3, this.attackStep || 1));
+        const ax = cx + f * (10 + swing * (16 + stepBoost));
+        const ay = baseY - this.h * (poseStep === 3 ? 0.64 : poseStep === 2 ? 0.68 : 0.72) - bob;
         g.fillStyle = this.skin;
-        const ax = cx + f * (10 + swing * (18 + stepBoost));
-        const ay = baseY - this.h * 0.7 - bob;
-        g.fillRect(ax - 3, ay - 3, 8, 6);
-        // fist
+        if (poseStep === 1) {
+          g.fillRect(ax - 3, ay - 3, 9, 6); // jab
+        } else if (poseStep === 2) {
+          g.save();
+          g.translate(ax, ay);
+          g.rotate(f * -0.22);
+          g.fillRect(-4, -4, 12, 7); // cross
+          g.restore();
+        } else {
+          g.save();
+          g.translate(ax + f * 2, ay - 2);
+          g.rotate(f * 0.55);
+          g.fillRect(-5, -4, 14, 8); // hook
+          g.restore();
+        }
         g.fillStyle = '#fff';
-        g.fillRect(ax + (f>0?5:-5), ay - 4, 5, 7);
+        g.fillRect(ax + (f > 0 ? 5 : -5), ay - 4, poseStep === 3 ? 7 : 5, 7);
         if (this.isPlayer && this.heldWeapon?.type === 'pipe') {
           g.save();
           g.strokeStyle = '#9aa0a6';
@@ -1894,13 +2279,28 @@ class Fighter {
           g.restore();
         }
       } else if (this.attackType === 'kick') {
+        // V8: front kick, roundhouse, and spin-finisher silhouettes.
+        const poseStep = Math.max(1, Math.min(3, this.attackStep || 1));
+        const ax = cx + f * (8 + swing * (20 + stepBoost));
+        const ay = baseY - this.h * (poseStep === 3 ? 0.48 : poseStep === 2 ? 0.52 : 0.56) - bob;
         g.fillStyle = '#2b2b2b';
-        const ax = cx + f * (8 + swing * (22 + stepBoost));
-        const ay = baseY - this.h * 0.55 - bob;
-        g.fillRect(ax - 4, ay - 4, 10, 7);
-        // boot
+        if (poseStep === 1) {
+          g.fillRect(ax - 4, ay - 4, 11, 7); // front kick
+        } else if (poseStep === 2) {
+          g.save();
+          g.translate(ax, ay);
+          g.rotate(f * -0.36);
+          g.fillRect(-5, -4, 14, 8); // roundhouse
+          g.restore();
+        } else {
+          g.save();
+          g.translate(ax + f * 1, ay - 1);
+          g.rotate(f * -0.82);
+          g.fillRect(-6, -5, 16, 9); // spin finisher
+          g.restore();
+        }
         g.fillStyle = '#1a1a1a';
-        g.fillRect(ax + (f>0?6:-9), ay - 5, 8, 8);
+        g.fillRect(ax + (f > 0 ? 6 : -9), ay - 5, poseStep === 3 ? 10 : 8, 8);
       } else if (this.attackType === 'jumpkick') {
         g.fillStyle = '#1a1a1a';
         const ax = cx + f * (14 + swing * 24);
@@ -1925,6 +2325,22 @@ class Fighter {
       g.font = this.isBoss ? 'bold 20px VT323, monospace' : 'bold 16px VT323, monospace';
       g.textAlign = 'center';
       g.fillText(this.isBoss ? '!!' : '!', cx, baseY - this.h - 12 - telegraphProgress * 4);
+      g.restore();
+    }
+
+    // Launched foes get an explicit juggle halo so follow-up windows read as intentional combat tech.
+    if (!this.isPlayer && this.juggleTime > 0 && this.state !== 'dead') {
+      g.save();
+      g.globalAlpha = 0.45 + 0.28 * Math.sin(performance.now() * 0.03);
+      g.strokeStyle = '#ffffff';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.ellipse(cx, baseY - this.h * 0.55, 18, 8, 0, 0, Math.PI * 2);
+      g.stroke();
+      g.font = 'bold 13px VT323, monospace';
+      g.textAlign = 'center';
+      g.fillStyle = '#ffe066';
+      g.fillText('JUGGLE', cx, baseY - this.h - 26);
       g.restore();
     }
 
@@ -2079,6 +2495,7 @@ class Prop {
     this.heldBy = null;
     this.thrown = false;
     this.dead = false;
+    this.hostile = false;
     this.damageArmed = false;
     this.life = 0;
     const specs = {
@@ -2248,6 +2665,8 @@ class World {
     this.flashColor = null;
     this.flashTime = 0;
     this.currentMoodId = settings.previewMood;
+    this.arcId = chooseArcId(settings.arcSelection);
+    this.runArc = ARC_LIBRARY[this.arcId]?.stages || ARC_LIBRARY.firstNightOut.stages;
     this.pendingMoodBanner = null;
     this.holdAttackTimer = { punch: 0, kick: 0 };
     this.combatMetrics = { hitTimes: [], hitStreak: 0, lastHitAt: -Infinity };
@@ -2299,7 +2718,7 @@ class World {
       lambda: 0.2,
       trigger: () => this.enemies.length > 0,
       effect: () => {
-        const e = this.enemies[Math.floor(Math.random() * this.enemies.length)];
+        const e = this.enemies[Math.floor(RNG.random() * this.enemies.length)];
         if (e && e.isAlive) e.speed *= 1.3;
       },
     });
@@ -2325,10 +2744,10 @@ class World {
   }
   moodForWave(wave) {
     if (settings.practiceMode) return settings.previewMood || 'tense';
-    return RUN_ARC.find(stage => wave >= stage.fromWave && wave <= stage.toWave)?.mood || 'triumphant';
+    return this.runArc.find(stage => wave >= stage.fromWave && wave <= stage.toWave)?.mood || 'triumphant';
   }
   moodBannerForWave(wave) {
-    return RUN_ARC.find(stage => wave >= stage.fromWave && wave <= stage.toWave)?.banner || 'CROWN';
+    return this.runArc.find(stage => wave >= stage.fromWave && wave <= stage.toWave)?.banner || 'CROWN';
   }
   syncRunMood(announce = false) {
     const nextMood = this.moodForWave(this.wave);
@@ -2369,17 +2788,32 @@ class World {
     this.specialBuffTime = 0;
     this.specialBuffDamageMult = 1;
     this.specialRings.length = 0;
+    this.arcId = chooseArcId(settings.arcSelection);
+    this.runArc = ARC_LIBRARY[this.arcId]?.stages || ARC_LIBRARY.firstNightOut.stages;
+    this.updateRunMetaBadge();
     this.syncRunMood(true);
     this.seedPropsForWave();
+  }
+  updateRunMetaBadge() {
+    const badge = document.getElementById('run-meta-badge');
+    if (!badge) return;
+    const arcLabel = ARC_LIBRARY[this.arcId]?.label || ARC_LIBRARY.firstNightOut.label;
+    const seedLabel = RNG.deterministic ? ` · SEED ${RNG.label}` : '';
+    badge.textContent = `ARC · ${arcLabel}${seedLabel}`;
+    badge.classList.remove('hidden');
   }
   seedPropsForWave() {
     const density = this.profile.gameplay.prop_density || 1;
     const target = Math.min(5, Math.max(1, Math.round((1 + Math.floor(this.wave / 3)) * density)));
     while (this.props.filter(p => !p.dead && !p.heldBy && !p.thrown).length < target) {
-      const roll = Math.random();
-      const type = roll < 0.52 ? 'crate' : roll < 0.83 ? 'barrel' : 'tire';
-      const x = 60 + Math.random() * Math.max(80, W - 120);
-      const y = backY + 30 + Math.random() * Math.max(40, groundY - backY - 60);
+      const propVariants = new CombinatorialVariantSet('prop_spawn', [
+        { value: 'crate', weight: 52 },
+        { value: 'barrel', weight: 31, minWave: 2 },
+        { value: 'tire', weight: 17, minWave: 3 },
+      ]);
+      const type = propVariants.choose({ mood: this.currentMoodId, wave: this.wave }) || 'crate';
+      const x = 60 + RNG.random() * Math.max(80, W - 120);
+      const y = backY + 30 + RNG.random() * Math.max(40, groundY - backY - 60);
       if (Math.abs(x - this.player.x) < 50 && Math.abs(y - this.player.y) < 35) continue;
       this.props.push(new Prop(type, x, y));
     }
@@ -2389,10 +2823,13 @@ class World {
     const liveWeapons = this.weapons.filter(w => !w.dead).length;
     const target = this.wave >= 3 ? 1 : 0;
     if (liveWeapons >= target) return;
-    const roll = Math.random();
-    const type = roll < 0.66 ? 'pipe' : 'bottle';
-    const x = 70 + Math.random() * Math.max(80, W - 140);
-    const y = backY + 34 + Math.random() * Math.max(40, groundY - backY - 72);
+    const weaponVariants = new CombinatorialVariantSet('weapon_spawn', [
+      { value: 'pipe', weight: 66 },
+      { value: 'bottle', weight: 34, minWave: 4 },
+    ]);
+    const type = weaponVariants.choose({ mood: this.currentMoodId, wave: this.wave }) || 'pipe';
+    const x = 70 + RNG.random() * Math.max(80, W - 140);
+    const y = backY + 34 + RNG.random() * Math.max(40, groundY - backY - 72);
     this.weapons.push(new WeaponPickup(type, x, y));
   }
   nearestProp(maxDist = 42) {
@@ -2431,6 +2868,18 @@ class World {
     this.player.heldWeapon = null;
     this.addFloat('BOTTLE!', this.player.x + this.player.facing * 24, this.player.y - 86, this.mood.accent_colors[0]);
     Audio.sfxThrow(); haptic(28); this.shake(3);
+    return true;
+  }
+  throwEnemyBottle(enemy) {
+    if (!enemy || !this.player?.isAlive) return false;
+    const dirY = Math.max(-0.85, Math.min(0.85, Math.sign(this.player.y - enemy.y) * 0.55));
+    const bottle = new Prop('bottle', enemy.x + enemy.facing * 12, enemy.y - 4);
+    bottle.hostile = true;
+    bottle.throwFrom(enemy, enemy.facing || Math.sign(this.player.x - enemy.x) || 1, dirY);
+    bottle.damage = Math.max(24, Math.round((bottle.damage || 38) * 0.82));
+    this.props.push(bottle);
+    this.addFloat('BOTTLE!', enemy.x + enemy.facing * 18, enemy.y - 86, this.mood.secondary_colors[0] || this.mood.primary_colors[0]);
+    Audio.sfxThrow();
     return true;
   }
   damagePipeDurability() {
@@ -2512,11 +2961,11 @@ class World {
     if (!prop || prop.dead) return;
     prop.dead = true;
     this.spawnImpact(x, y - 10);
-    this.spawnImpact(x + (Math.random() - 0.5) * 10, y - 8);
+    this.spawnImpact(x + (RNG.random() - 0.5) * 10, y - 8);
     this.shake(prop.type === 'barrel' ? 6 : 4);
     Audio.sfxBreak();
     const scriptedDrop = rollDropTable(PROP_DROP_TABLES[prop.type]);
-    const fallbackHealth = scriptedDrop == null && Math.random() < dropChance ? 'health' : null;
+    const fallbackHealth = scriptedDrop == null && RNG.random() < dropChance ? 'health' : null;
     const item = scriptedDrop || fallbackHealth;
     if (item) this.spawnPickup(item, x, y);
   }
@@ -2638,20 +3087,27 @@ class World {
     return true;
   }
 
+  isCrownBossWave(wave = this.wave) {
+    return wave === 10;
+  }
   isEliteWave(wave = this.wave) {
-    return wave >= 5 && wave % 5 === 0;
+    return wave === 5 || (wave > 10 && wave % 5 === 0);
+  }
+  needsBossEncounter(wave = this.wave) {
+    return this.isCrownBossWave(wave) || this.isEliteWave(wave);
   }
   spawnEliteEnemy() {
     const m = this.mood;
-    const side = Math.random() < 0.5 ? -1 : 1;
+    const side = RNG.random() < 0.5 ? -1 : 1;
     const sx = side < 0 ? -26 : W + 26;
-    const sy = backY + 42 + Math.random() * Math.max(20, groundY - backY - 84);
+    const sy = backY + 42 + RNG.random() * Math.max(20, groundY - backY - 84);
     const archetype = ENEMY_ARCHETYPES.boss;
-    const hpBase = 110 + this.wave * 16;
+    const crownBoss = this.isCrownBossWave();
+    const hpBase = (crownBoss ? 138 : 110) + this.wave * (crownBoss ? 18 : 16);
     const speedBase = 66 + this.wave * 4;
     const elite = new Fighter({
       x: sx, y: sy, facing: -side,
-      hp: hpBase * archetype.hpMult,
+      hp: hpBase * archetype.hpMult * (crownBoss ? 1.18 : 1),
       speed: speedBase * archetype.speedMult * this.gameplayMood.enemySpeedMult,
       color: '#ffd700', skin: '#b8743d', shirt: '#3a0ca3', isPlayer: false,
       aiCadenceMult: Math.max(0.78, this.gameplayMood.attackCadenceMult * 0.94),
@@ -2669,7 +3125,7 @@ class World {
     this.enemiesSpawned++;
     this.bossSpawned = true;
     this.flash(m.accent_colors[0], 0.18);
-    this.addFloat('ELITE INBOUND!', W / 2, H * 0.32, m.primary_colors[0]);
+    this.addFloat(crownBoss ? 'CROWN CLASH!' : 'ELITE INBOUND!', W / 2, H * 0.32, m.primary_colors[0]);
     this.spawnSpecialRing(W / 2, H * 0.55, 92, m.accent_colors[0], 0.9);
     this.shake(8);
   }
@@ -2677,10 +3133,10 @@ class World {
   spawnEnemy() {
     const m = this.mood;
     const gp = this.gameplayMood;
-    const side = Math.random() < 0.5 ? -1 : 1;
+    const side = RNG.random() < 0.5 ? -1 : 1;
     const sx = side < 0 ? -20 : W + 20;
-    const sy = backY + 20 + Math.random() * (groundY - backY - 40);
-    const archetypeId = pickWeighted(gp.archetypeWeights);
+    const sy = backY + 20 + RNG.random() * (groundY - backY - 40);
+    const archetypeId = pickWeighted(gp.archetypeWeights, { mood: this.currentMoodId, wave: this.wave });
     const archetype = ENEMY_ARCHETYPES[archetypeId] || ENEMY_ARCHETYPES.weak;
 
     // Enemy palette: contrasts the active emotional phase.
@@ -2689,9 +3145,9 @@ class World {
       { color: '#222', skin: '#a47148', shirt: m.secondary_colors[0] },
       { color: '#5c4033', skin: '#e0ac69', shirt: m.primary_colors[2] || m.primary_colors[0] },
     ];
-    const p = palettes[Math.floor(Math.random() * palettes.length)];
+    const p = palettes[Math.floor(RNG.random() * palettes.length)];
     const hpBase = 30 + this.wave * 8;
-    const speedBase = 70 + this.wave * 6 + Math.random() * 20;
+    const speedBase = 70 + this.wave * 6 + RNG.random() * 20;
     const e = new Fighter({
       x: sx, y: sy, facing: -side,
       hp: hpBase * archetype.hpMult,
@@ -2713,8 +3169,8 @@ class World {
   }
 
   spawnPickup(type, atX = null, atY = null) {
-    const x = atX == null ? Math.max(60, Math.min(W - 60, this.player.x + (Math.random() - 0.5) * 200)) : Math.max(40, Math.min(W - 40, atX));
-    const y = atY == null ? backY + 30 + Math.random() * (groundY - backY - 60) : Math.max(backY + 18, Math.min(groundY - 12, atY));
+    const x = atX == null ? Math.max(60, Math.min(W - 60, this.player.x + (RNG.random() - 0.5) * 200)) : Math.max(40, Math.min(W - 40, atX));
+    const y = atY == null ? backY + 30 + RNG.random() * (groundY - backY - 60) : Math.max(backY + 18, Math.min(groundY - 12, atY));
     this.pickups.push({ type, x, y, t: 0, life: 12 });
     this.addFloat(type === 'coin' ? '+SCORE!' : '+HEALTH!', x, y - 40, this.mood.primary_colors[0]);
     Audio.sfxPickup();
@@ -2723,31 +3179,31 @@ class World {
     const m = this.mood;
     const colors = m.particle_colors;
     this.sparkles.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      vx: (Math.random() - 0.5) * 12,
-      vy: -10 - Math.random() * 20,
-      life: 1.5 + Math.random() * 1.5,
+      x: RNG.random() * W,
+      y: RNG.random() * H,
+      vx: (RNG.random() - 0.5) * 12,
+      vy: -10 - RNG.random() * 20,
+      life: 1.5 + RNG.random() * 1.5,
       maxLife: 2.5,
-      size: 1 + Math.random() * 2,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      twinkle: Math.random() * Math.PI * 2,
+      size: 1 + RNG.random() * 2,
+      color: colors[Math.floor(RNG.random() * colors.length)],
+      twinkle: RNG.random() * Math.PI * 2,
       rarity,
     });
   }
   spawnSparkleBurst() {
-    const cx = Math.random() * W;
-    const cy = backY + Math.random() * (groundY - backY);
+    const cx = RNG.random() * W;
+    const cy = backY + RNG.random() * (groundY - backY);
     for (let i = 0; i < 14; i++) {
       const a = (i / 14) * Math.PI * 2;
-      const v = 40 + Math.random() * 60;
+      const v = 40 + RNG.random() * 60;
       const m = this.mood;
-      const col = m.particle_colors[Math.floor(Math.random() * m.particle_colors.length)];
+      const col = m.particle_colors[Math.floor(RNG.random() * m.particle_colors.length)];
       this.sparkles.push({
         x: cx, y: cy,
         vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20,
-        life: 1.2 + Math.random() * 0.8, maxLife: 2,
-        size: 2 + Math.random() * 2,
+        life: 1.2 + RNG.random() * 0.8, maxLife: 2,
+        size: 2 + RNG.random() * 2,
         color: col,
         twinkle: 0,
         rarity: 'rare',
@@ -2856,6 +3312,11 @@ class World {
           const holdDamageMult = this.player.attackSource === 'hold' ? 0.75 : 1.0;
           const mult = baseMult * holdDamageMult * (this.specialBuffTime > 0 ? this.specialBuffDamageMult : 1.0);
           e.hurt(phb.dmg * mult, knockDir, phb.knock * mult);
+          if (this.player.attackType === 'kick' && phb.step === 3 && !e.isBoss) {
+            if (e.launchJuggle(knockDir)) {
+              this.addFloat('LAUNCH!', e.x, e.y - 104, this.mood.accent_colors[0]);
+            }
+          }
           this.player.noteAttackConnected();
           const nowHit = performance.now();
           if (nowHit - this.combatMetrics.lastHitAt <= 900) this.combatMetrics.hitStreak += 1;
@@ -2870,6 +3331,10 @@ class World {
           this.spawnImpact(phb.x + phb.w/2, phb.y + phb.h/2);
           if (phb.step && phb.step > 1 && this.player.attackType !== 'jumpkick') {
             this.addFloat(`CHAIN ${phb.step}`, e.x, e.y - 88, this.mood.accent_colors[0]);
+          }
+          if (e.juggleTime > 0 && this.player.attackType === 'punch' && phb.step === 1) {
+            this.addFloat('AIR TAP!', e.x, e.y - 118, this.mood.secondary_colors[0] || this.mood.primary_colors[0]);
+            this.chargeSpecial(4);
           }
           this.shake(4);
           this.addFloat('+' + Math.floor(phb.dmg * mult), e.x, e.y - 70, this.mood.primary_colors[0]);
@@ -2886,11 +3351,21 @@ class World {
       if (Math.abs(this.player.y - e.y) > 30) continue;
       if (rectOverlap(ehb, this.player.rect())) {
         const knockDir = Math.sign(this.player.x - e.x) || -e.facing;
-        this.player.hurt(ehb.dmg, knockDir, ehb.knock);
-        Audio.sfxHurt(); haptic(40);
+        const capId = e.pendingCapabilityId;
+        if (capId === 'grab_player') {
+          this.player.hurt(Math.max(16, ehb.dmg * 1.18), knockDir, 1.22);
+          this.player.stateTime = Math.max(this.player.stateTime || 0, 0.34);
+          this.addFloat('SLAM!', this.player.x, this.player.y - 100, this.mood.accent_colors[0]);
+          this.shake(10);
+        } else {
+          this.player.hurt(ehb.dmg, knockDir, ehb.knock);
+          this.shake(capId === 'slam' ? 9 : 6);
+          if (capId === 'slam') this.addFloat('HEAVY!', this.player.x, this.player.y - 96, this.mood.accent_colors[0]);
+        }
+        Audio.sfxHurt(); haptic(capId === 'grab_player' ? 52 : 40);
         this.spawnImpact(ehb.x + ehb.w/2, ehb.y + ehb.h/2);
-        this.shake(6);
         e.attackTime = 0.3;
+        e.pendingCapabilityId = null;
         if (this.player.hp <= 0) {
           Audio.sfxKO();
           this.shake(14);
@@ -2901,18 +3376,33 @@ class World {
     // Thrown props and thrown enemies can crash through the crowd.
     for (const prop of this.props) {
       if (!prop.thrown || prop.dead || !prop.damageArmed) continue;
-      for (const enemy of this.enemies) {
-        if (!enemy.isAlive || enemy.grabbedBy || enemy.isThrown) continue;
-        if (Math.abs(enemy.y - prop.y) > 34) continue;
-        if (rectOverlap(prop.rect(), enemy.rect())) {
-          const knockDir = Math.sign(enemy.x - prop.x) || this.player.facing;
-          enemy.hurt(prop.damage, knockDir, prop.type === 'barrel' ? 1.35 : 1.05);
-          this.score += prop.damage;
-          this.chargeSpecial(prop.damage * 0.42);
-          this.combatMetrics.hitTimes.push(performance.now());
-          this.addFloat(`PROP +${prop.damage}`, enemy.x, enemy.y - 86, this.mood.primary_colors[0]);
-          this.breakProp(prop, prop.x, prop.y, prop.type === 'barrel' ? 0.35 : 0.22);
-          break;
+      if (prop.hostile) {
+        if (this.player.isAlive && Math.abs(this.player.y - prop.y) <= 34 && rectOverlap(prop.rect(), this.player.rect())) {
+          const knockDir = Math.sign(this.player.x - prop.x) || 1;
+          this.player.hurt(prop.damage, knockDir, 1.05);
+          this.addFloat(`BOTTLE -${prop.damage}`, this.player.x, this.player.y - 92, this.mood.accent_colors[0]);
+          this.spawnImpact(prop.x, prop.y - 18);
+          this.breakProp(prop, prop.x, prop.y, 0.05);
+          Audio.sfxHurt(); haptic(44); this.shake(7);
+          if (this.player.hp <= 0) {
+            Audio.sfxKO();
+            this.shake(14);
+          }
+        }
+      } else {
+        for (const enemy of this.enemies) {
+          if (!enemy.isAlive || enemy.grabbedBy || enemy.isThrown) continue;
+          if (Math.abs(enemy.y - prop.y) > 34) continue;
+          if (rectOverlap(prop.rect(), enemy.rect())) {
+            const knockDir = Math.sign(enemy.x - prop.x) || this.player.facing;
+            enemy.hurt(prop.damage, knockDir, prop.type === 'barrel' ? 1.35 : 1.05);
+            this.score += prop.damage;
+            this.chargeSpecial(prop.damage * 0.42);
+            this.combatMetrics.hitTimes.push(performance.now());
+            this.addFloat(`PROP +${prop.damage}`, enemy.x, enemy.y - 86, this.mood.primary_colors[0]);
+            this.breakProp(prop, prop.x, prop.y, prop.type === 'barrel' ? 0.35 : 0.22);
+            break;
+          }
         }
       }
       if (prop.dead) continue;
@@ -2978,19 +3468,19 @@ class World {
 
     // Spawn waves
     if (this.player.isAlive) {
-      if (this.isEliteWave() && !this.bossSpawned) {
+      if (this.needsBossEncounter() && !this.bossSpawned) {
         this.spawnTimer -= dt;
         if (this.spawnTimer <= 0) {
           this.spawnEliteEnemy();
           const [spawnMin, spawnMax] = this.gameplayMood.spawnInterval;
-          this.spawnTimer = 0.45 + (spawnMin + Math.random() * (spawnMax - spawnMin)) * 0.55;
+          this.spawnTimer = 0.45 + (spawnMin + RNG.random() * (spawnMax - spawnMin)) * 0.55;
         }
       } else if (this.enemiesSpawned < this.enemiesPerWave) {
         this.spawnTimer -= dt;
-        if (this.spawnTimer <= 0 && this.enemies.length < this.gameplayMood.maxConcurrent + (this.isEliteWave() ? 1 : 0)) {
+        if (this.spawnTimer <= 0 && this.enemies.length < this.gameplayMood.maxConcurrent + (this.needsBossEncounter() ? 1 : 0)) {
           this.spawnEnemy();
           const [spawnMin, spawnMax] = this.gameplayMood.spawnInterval;
-          this.spawnTimer = spawnMin + Math.random() * (spawnMax - spawnMin);
+          this.spawnTimer = spawnMin + RNG.random() * (spawnMax - spawnMin);
         }
       } else if (this.enemies.length === 0 && !this.waveCleared) {
         this.waveCleared = true;
@@ -3011,7 +3501,7 @@ class World {
           this.syncRunMood(false);
           this.seedPropsForWave();
           const [spawnMin, spawnMax] = this.gameplayMood.spawnInterval;
-          this.spawnTimer = spawnMin + Math.random() * (spawnMax - spawnMin);
+          this.spawnTimer = spawnMin + RNG.random() * (spawnMax - spawnMin);
         }
       }
     }
@@ -3073,6 +3563,7 @@ class World {
       intensity: reactiveIntensity,
       hpRatio,
       hitStreak: this.combatMetrics.hitStreak,
+      moodId: this.currentMoodId,
     });
 
     // Update HUD
@@ -3098,15 +3589,15 @@ class World {
     const m = this.mood;
     const burstCount = this.gameplayMood.hitBurstCount || 8;
     for (let i = 0; i < burstCount; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const sp = 80 + Math.random() * 120;
+      const a = RNG.random() * Math.PI * 2;
+      const sp = 80 + RNG.random() * 120;
       this.particles.push({
         x, y,
         vx: Math.cos(a) * sp,
         vy: Math.sin(a) * sp - 30,
-        life: 0.4 + Math.random() * 0.3,
-        size: 2 + Math.random() * 3,
-        color: m.particle_colors[Math.floor(Math.random() * m.particle_colors.length)],
+        life: 0.4 + RNG.random() * 0.3,
+        size: 2 + RNG.random() * 3,
+        color: m.particle_colors[Math.floor(RNG.random() * m.particle_colors.length)],
       });
     }
   }
@@ -3114,8 +3605,8 @@ class World {
   draw(g) {
     const m = this.mood;
     // shake offset
-    const sx = (Math.random() - 0.5) * this.cameraShake;
-    const sy = (Math.random() - 0.5) * this.cameraShake;
+    const sx = (RNG.random() - 0.5) * this.cameraShake;
+    const sy = (RNG.random() - 0.5) * this.cameraShake;
     g.save();
     g.translate(sx, sy);
 
@@ -3220,9 +3711,12 @@ class World {
       g.fillText(`WAVE ${this.wave} CLEAR`, W/2, H/2);
       g.font = '400 14px "VT323", system-ui';
       g.fillStyle = m.secondary_colors[0] || '#fff';
-      const nextBanner = this.isEliteWave(this.wave + 1)
-        ? `${this.moodBannerForWave(this.wave + 1)} · ELITE WAVE`
-        : this.moodBannerForWave(this.wave + 1);
+      const nextWave = this.wave + 1;
+      const nextBanner = this.isCrownBossWave(nextWave)
+        ? `${this.moodBannerForWave(nextWave)} · CROWN CLASH`
+        : this.isEliteWave(nextWave)
+          ? `${this.moodBannerForWave(nextWave)} · ELITE WAVE`
+          : this.moodBannerForWave(nextWave);
       g.fillText(`NEXT WAVE INCOMING · ${nextBanner}`, W/2, H/2 + 22);
     }
   }
@@ -3300,6 +3794,8 @@ class World {
     g.fill();
     g.globalAlpha = 1;
 
+    this.drawEmotionStageDetails(g, m);
+
     // Far buildings (silhouettes)
     g.fillStyle = m.background_colors[1] || m.background_colors[0];
     const buildings = 12;
@@ -3330,6 +3826,74 @@ class World {
       g.beginPath(); g.moveTo(0, by); g.lineTo(W, by); g.stroke();
     }
   }
+  drawEmotionStageDetails(g, m) {
+    const moodId = this.currentMoodId || settings.previewMood || 'tense';
+    g.save();
+    if (moodId === 'bright') {
+      g.globalAlpha = 0.24;
+      g.fillStyle = m.primary_colors[0];
+      for (let i = 0; i < 4; i++) {
+        const x = W * (0.12 + i * 0.22);
+        g.fillRect(x, backY * 0.23 + (i % 2) * 8, 54, 8);
+        g.fillRect(x + 8, backY * 0.23 + 8 + (i % 2) * 8, 4, 18);
+        g.fillRect(x + 42, backY * 0.23 + 8 + (i % 2) * 8, 4, 18);
+      }
+      g.globalAlpha = 0.18;
+      g.fillStyle = m.secondary_colors[0];
+      g.fillRect(W * 0.07, backY * 0.64, W * 0.86, 4);
+    } else if (moodId === 'calm') {
+      g.globalAlpha = 0.18;
+      g.fillStyle = m.secondary_colors[0];
+      g.beginPath(); g.arc(W * 0.18, H * 0.18, 28, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 0.16;
+      for (let i = 0; i < 5; i++) {
+        const x = W * (0.08 + i * 0.18);
+        g.fillRect(x, backY * 0.48 - 20 - (i % 2) * 8, 18, 20 + (i % 2) * 8);
+        g.fillRect(x + 4, backY * 0.48 - 32 - (i % 2) * 8, 10, 12);
+      }
+    } else if (moodId === 'mysterious') {
+      g.globalAlpha = 0.22;
+      g.strokeStyle = m.accent_colors[0];
+      g.lineWidth = 3;
+      for (let i = 0; i < 3; i++) {
+        const x = W * (0.18 + i * 0.26);
+        g.strokeRect(x, backY * 0.26 + (i % 2) * 12, 40, 24);
+      }
+      g.globalAlpha = 0.12;
+      g.fillStyle = '#000';
+      g.fillRect(0, backY * 0.43, W, 22);
+    } else if (moodId === 'tense') {
+      g.globalAlpha = 0.22;
+      g.fillStyle = m.accent_colors[0];
+      for (let i = 0; i < 5; i++) {
+        const x = W * (0.08 + i * 0.19);
+        g.fillRect(x, backY * 0.18 + (i % 2) * 7, 34, 10);
+        g.fillRect(x + 12, backY * 0.18 + 10 + (i % 2) * 7, 10, 18);
+      }
+      g.globalAlpha = 0.16;
+      g.fillStyle = m.primary_colors[0];
+      g.fillRect(W * 0.03, backY * 0.60, W * 0.94, 5);
+    } else if (moodId === 'triumphant') {
+      g.globalAlpha = 0.18;
+      g.fillStyle = m.primary_colors[0];
+      for (let i = 0; i < 4; i++) {
+        const x = W * (0.10 + i * 0.22);
+        g.beginPath();
+        g.moveTo(x, backY * 0.16);
+        g.lineTo(x + 24, backY * 0.16);
+        g.lineTo(x + 12, backY * 0.28);
+        g.closePath();
+        g.fill();
+      }
+      g.globalAlpha = 0.14;
+      g.strokeStyle = m.secondary_colors[0] || m.primary_colors[0];
+      g.lineWidth = 4;
+      g.beginPath(); g.moveTo(W * 0.18, H * 0.06); g.lineTo(W * 0.42, backY * 0.66); g.stroke();
+      g.beginPath(); g.moveTo(W * 0.82, H * 0.06); g.lineTo(W * 0.58, backY * 0.66); g.stroke();
+    }
+    g.restore();
+  }
+
   drawGround(g, m) {
     // Perspective ground
     const grd = g.createLinearGradient(0, backY, 0, groundY + 60);
@@ -3439,6 +4003,20 @@ function setupSettingsUI() {
   sfxSlider.value = settings.sfxVol;
   document.getElementById('music-val').textContent = settings.musicVol + '%';
   document.getElementById('sfx-val').textContent = settings.sfxVol + '%';
+  const arcSelect = document.getElementById('arc-select');
+  const arcName = document.getElementById('arc-name');
+  if (arcSelect) arcSelect.value = settings.arcSelection || 'firstNightOut';
+  if (arcName) arcName.textContent = settings.arcSelection === 'random'
+    ? 'RANDOM CURATED ARC'
+    : (ARC_LIBRARY[settings.arcSelection]?.label || ARC_LIBRARY.firstNightOut.label);
+  arcSelect?.addEventListener('change', () => {
+    settings.arcSelection = arcSelect.value;
+    saveSettings();
+    const label = settings.arcSelection === 'random'
+      ? 'RANDOM CURATED ARC'
+      : (ARC_LIBRARY[settings.arcSelection]?.label || ARC_LIBRARY.firstNightOut.label);
+    if (arcName) arcName.textContent = label;
+  });
 
   musicSlider.addEventListener('input', () => {
     document.getElementById('music-val').textContent = musicSlider.value + '%';
@@ -3496,6 +4074,10 @@ function setupSettingsUI() {
     document.getElementById('motion-toggle').classList.toggle('on', settings.reduceMotion);
     document.getElementById('haptics-toggle').classList.toggle('on', settings.haptics);
     document.getElementById('practice-toggle').classList.toggle('on', settings.practiceMode);
+    const arcSelectReset = document.getElementById('arc-select');
+    const arcNameReset = document.getElementById('arc-name');
+    if (arcSelectReset) arcSelectReset.value = settings.arcSelection;
+    if (arcNameReset) arcNameReset.textContent = ARC_LIBRARY[settings.arcSelection]?.label || ARC_LIBRARY.firstNightOut.label;
     document.body.classList.toggle('reduce-motion', settings.reduceMotion);
     setMood(settings.previewMood);
     buildMoodGrid();
