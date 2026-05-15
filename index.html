@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-<title>Twin Fists V10 — Arc Library, Capability AI & Emotional Stages</title>
+<title>Twin Fists V12 — Final Fidelity & Validation Pass</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -212,11 +212,78 @@
     box-shadow: 1px 1px 0 0 var(--c-contrast);
   }
 
+
+  .analog-pad {
+    pointer-events: auto;
+    position: relative;
+    width: 8.236rem;
+    height: 8.236rem;
+    border-radius: 50%;
+    border: 3px solid var(--c-ui);
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0 34%, rgba(0,0,0,0.60) 35% 100%);
+    box-shadow: 4px 4px 0 0 var(--c-contrast), inset 0 0 0 2px rgba(0,0,0,0.45);
+    touch-action: none;
+    user-select: none;
+  }
+  .analog-ring {
+    position: absolute;
+    inset: 0.618rem;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,255,255,0.32);
+    pointer-events: none;
+  }
+  .analog-cross::before,
+  .analog-cross::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,0.18);
+    pointer-events: none;
+  }
+  .analog-cross::before { width: 1px; height: 76%; }
+  .analog-cross::after { width: 76%; height: 1px; }
+  .analog-knob {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 3.236rem; height: 3.236rem;
+    margin-left: -1.618rem; margin-top: -1.618rem;
+    border-radius: 50%;
+    border: 3px solid var(--c-primary);
+    background: rgba(0,0,0,0.72);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--c-primary) 70%, transparent), 3px 3px 0 0 var(--c-contrast);
+    transform: translate(0,0);
+    transition: transform 0.06s linear, border-color 0.12s, box-shadow 0.12s;
+    pointer-events: none;
+  }
+  .analog-pad.active .analog-knob {
+    border-color: var(--c-accent);
+    box-shadow: 0 0 22px color-mix(in srgb, var(--c-accent) 78%, transparent), 3px 3px 0 0 var(--c-contrast);
+  }
+  .analog-label {
+    position: absolute;
+    left: 50%; bottom: 0.382rem;
+    transform: translateX(-50%);
+    color: var(--c-ui);
+    font-family: 'VT323', monospace;
+    font-size: 0.9rem;
+    letter-spacing: 0.18em;
+    opacity: 0.78;
+    pointer-events: none;
+  }
+
   .action-pad {
     pointer-events: auto;
-    display: flex; flex-direction: column; gap: var(--s-1); align-items: flex-end;
+    width: 12.0rem;
+    height: 12.0rem;
+    display: grid;
+    grid-template-columns: repeat(3, 4rem);
+    grid-template-rows: repeat(3, 4rem);
+    align-items: center;
+    justify-items: center;
+    position: relative;
   }
-  .action-row { display: flex; gap: var(--s-1); }
   .act-btn {
     width: 4.236rem; height: 4.236rem;
     border-radius: 50%;
@@ -224,15 +291,23 @@
     border: 3px solid var(--c-ui);
     color: var(--c-ui);
     font-family: 'Bungee', sans-serif;
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
     cursor: pointer;
     box-shadow: 4px 4px 0 0 var(--c-contrast);
-    transition: transform 0.08s;
+    transition: transform 0.08s, filter 0.12s, background 0.12s;
+    line-height: 1.05;
+    padding: 0.25rem;
   }
-  .act-btn.punch  { border-color: var(--c-primary); color: var(--c-primary); }
-  .act-btn.kick   { border-color: var(--c-secondary); color: var(--c-secondary); }
-  .act-btn.jump   { border-color: var(--c-accent); color: var(--c-accent); width: 3.236rem; height: 3.236rem; font-size: 0.7rem; }
+  .act-btn.punch   { grid-column: 1; grid-row: 2; border-color: var(--c-primary); color: var(--c-primary); }
+  .act-btn.kick    { grid-column: 2; grid-row: 3; border-color: var(--c-secondary); color: var(--c-secondary); }
+  .act-btn.jump    { grid-column: 2; grid-row: 1; border-color: var(--c-accent); color: var(--c-accent); font-size: 0.72rem; }
+  .act-btn.special { grid-column: 3; grid-row: 2; border-color: var(--c-ui); color: var(--c-ui); font-size: 0.62rem; background: rgba(0,0,0,0.68); }
+  .act-btn.special.ready {
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+    filter: brightness(1.25);
+  }
   .act-btn.pressed { transform: translate(2px,2px) scale(0.95); box-shadow: 2px 2px 0 0 var(--c-contrast); }
 
   /* Modal overlay */
@@ -460,7 +535,8 @@
   @media (orientation: landscape) and (max-height: 500px) {
     .act-btn { width: 3.5rem; height: 3.5rem; }
     .act-btn.jump { width: 2.8rem; height: 2.8rem; }
-    .dpad { grid-template-columns: repeat(3, 2.8rem); grid-template-rows: repeat(3, 2.8rem); }
+    .analog-pad { width: 6.4rem; height: 6.4rem; }
+    .analog-knob { width: 2.618rem; height: 2.618rem; margin-left: -1.309rem; margin-top: -1.309rem; }
   }
 
 
@@ -608,30 +684,22 @@
 
   <!-- Touch controls -->
   <div id="touch-controls" class="hidden">
-    <div class="dpad">
-      <button disabled></button>
-      <button data-dir="up" aria-label="Up">▲</button>
-      <button disabled></button>
-      <button data-dir="left" aria-label="Left">◀</button>
-      <button disabled></button>
-      <button data-dir="right" aria-label="Right">▶</button>
-      <button disabled></button>
-      <button data-dir="down" aria-label="Down">▼</button>
-      <button disabled></button>
+    <div class="analog-pad" id="analog-pad" aria-label="Analog movement joystick">
+      <div class="analog-ring"></div>
+      <div class="analog-cross"></div>
+      <div class="analog-knob" id="analog-knob"></div>
+      <div class="analog-label">MOVE</div>
     </div>
-    <div class="action-pad">
-      <div class="action-row">
-        <button class="act-btn jump" data-act="jump">JUMP</button>
-      </div>
-      <div class="action-row">
-        <button class="act-btn kick" data-act="kick">KICK</button>
-        <button class="act-btn punch" data-act="punch">PUNCH</button>
-      </div>
+    <div class="action-pad" aria-label="Action buttons">
+      <button class="act-btn jump" data-act="jump" aria-label="Jump">JUMP</button>
+      <button class="act-btn punch" data-act="punch" aria-label="Punch">PUNCH</button>
+      <button class="act-btn kick" data-act="kick" aria-label="Kick">KICK</button>
+      <button class="act-btn special" id="btn-special-action" data-act="special" aria-label="Special attack">SPECIAL</button>
     </div>
   </div>
 
   <div id="qa-lab" class="qa-lab hidden" aria-live="polite">
-    <div class="qa-title">QA LAB · V10</div>
+    <div class="qa-title">QA LAB · V12</div>
     <div class="qa-metrics">
       <span>FPS <strong id="qa-fps">—</strong></span>
       <span>MOOD <strong id="qa-mood">—</strong></span>
@@ -640,6 +708,8 @@
       <span>ENEMIES <strong id="qa-enemies">—</strong></span>
       <span>PROPS <strong id="qa-props">—</strong></span>
       <span class="qa-feature-line">MUSIC <strong id="qa-features">—</strong></span>
+      <span class="qa-feature-line">RECONCILE <strong id="qa-reconcile">—</strong></span>
+      <span class="qa-feature-line">EVENT <strong id="qa-event">—</strong></span>
     </div>
     <div class="qa-btn-grid">
       <button class="qa-btn" id="qa-audio-stress">AUDIO STRESS</button>
@@ -648,6 +718,8 @@
       <button class="qa-btn" id="qa-bottler">SPAWN BOTTLER</button>
       <button class="qa-btn" id="qa-crown">CROWN CLASH</button>
       <button class="qa-btn" id="qa-flash">OVERLAY PULSE</button>
+      <button class="qa-btn" id="qa-force-event">FORCE EVENT</button>
+      <button class="qa-btn" id="qa-music-surge">MUSIC SURGE</button>
     </div>
   </div>
 
@@ -656,7 +728,7 @@
     <div class="modal">
       <div class="title-art">
         <h1>TWIN FISTS</h1>
-        <div class="sub">— A STREET BRAWLER · V10 —</div>
+        <div class="sub">— A STREET BRAWLER · V15 —</div>
       </div>
       <p style="margin-bottom: var(--s-2); line-height: 1.6;">
         The city's gone sideways. Thugs in the alley, neon humming overhead. You've got two fists, two feet, and one shot to clear the block.
@@ -665,8 +737,8 @@
         <strong>Controls:</strong><br>
         D-PAD to move &middot; PUNCH / KICK to brawl &middot; JUMP for kicks from above<br>
         PUNCH near props to pick up / throw. PUNCH near stunned enemies to grab / launch. KICK drops held props.<br>
-        When SPECIAL is full, press PUNCH + KICK together to unleash the current emotion's power.<br>V8 adds a feature-driven music director, explicit juggle launches, clearer combo pose families, and a true Crown Clash boss encounter.<br>
-        <em style="opacity:0.7;">Desktop: arrows / WASD, J=punch/use, K=kick/drop, J+K=special, space=jump</em>
+        When SPECIAL is full, press PUNCH + KICK together to unleash the current emotion's power.<br>Kick while carrying a pipe to throw it. Follow the up-arrow after wave clear to advance levels.<br>V11 expands bounded gameplay events, completes the reactive-music director layer, and exposes richer QA inspection for final validation.<br>
+        <em style="opacity:0.7;">Desktop: arrows / WASD, J=punch/use, K=kick/drop/throw pipe, L=special, J+K=special, space=jump</em>
       </p>
       <button class="modal-btn" id="btn-start">ENTER THE STREETS</button>
       <button class="modal-btn secondary" id="btn-start-settings">⚙ Settings</button>
@@ -683,7 +755,7 @@
         <label>EMOTIONAL FEEL <span class="val" id="mood-name">—</span></label>
         <div class="mood-grid" id="mood-grid"></div>
         <p class="small-print" style="text-align:left; margin-top:0.618rem;">
-          Runs follow an authored emotional arc across waves. This selection sets the preview palette and becomes the locked run mood only when Practice Mood is enabled. V8 keeps those systems and adds a richer music-feature director, Crown Clash boss pacing, and explicit juggle windows for launcher follow-ups.
+          Runs follow an authored emotional arc across waves. This selection sets the preview palette and becomes the locked run mood only when Practice Mood is enabled. V11 completes the event ecology and music-director fidelity work while preserving Crown Clash, weapons, juggle windows, and QA instrumentation.
         </p>
       </div>
 
@@ -1264,25 +1336,71 @@ const MUSIC_FEATURES = [
     id: 'accent_stabs', category: 'harmonic',
     requiredIntensity: 0.55, releaseIntensity: 0.46,
     eligible: ['bright', 'mysterious', 'tense', 'triumphant'], forbidden: [],
+    exclusiveWith: ['pad_shimmer'], attackSeconds: 0.18, releaseSeconds: 0.24,
     maxGain: 0.28, priority: 70,
   },
   {
-    id: 'low_hp_throb', category: 'bass',
+    id: 'octave_stabs', category: 'harmonic',
+    requiredIntensity: 0.76, releaseIntensity: 0.64,
+    eligible: ['tense', 'triumphant'], forbidden: ['calm'],
+    exclusiveWith: ['accent_stabs', 'pad_shimmer'], attackSeconds: 0.16, releaseSeconds: 0.22,
+    maxGain: 0.20, priority: 84,
+  },
+  {
+    id: 'pad_shimmer', category: 'harmonic',
+    requiredIntensity: 0.34, releaseIntensity: 0.26,
+    eligible: ['bright', 'calm', 'triumphant'], forbidden: ['tense'],
+    exclusiveWith: ['accent_stabs', 'octave_stabs'], attackSeconds: 0.42, releaseSeconds: 0.55,
+    maxGain: 0.14, priority: 58,
+  },
+  {
+    id: 'bass_walk', category: 'bass_motion',
+    requiredIntensity: 0.48, releaseIntensity: 0.38,
+    eligible: ['bright', 'mysterious', 'tense', 'triumphant'], forbidden: [],
+    exclusiveWith: ['low_hp_throb'], attackSeconds: 0.22, releaseSeconds: 0.28,
+    maxGain: 0.16, priority: 64,
+  },
+  {
+    id: 'low_hp_throb', category: 'bass_motion',
     requiredIntensity: 0.22, releaseIntensity: 0.12,
     eligible: ['calm', 'mysterious', 'tense', 'triumphant'], forbidden: ['bright'],
+    exclusiveWith: ['bass_walk'], attackSeconds: 0.20, releaseSeconds: 0.30,
     maxGain: 0.18, priority: 95, trigger: 'low_hp',
+  },
+  {
+    id: 'hat_surge', category: 'percussion',
+    requiredIntensity: 0.58, releaseIntensity: 0.46,
+    eligible: ['mysterious', 'tense', 'triumphant'], forbidden: ['calm'],
+    exclusiveWith: [], attackSeconds: 0.14, releaseSeconds: 0.20,
+    maxGain: 0.11, priority: 68,
+  },
+  {
+    id: 'arp_spark', category: 'lead',
+    requiredIntensity: 0.42, releaseIntensity: 0.32,
+    eligible: ['bright', 'mysterious', 'triumphant'], forbidden: ['calm'],
+    exclusiveWith: [], attackSeconds: 0.18, releaseSeconds: 0.24,
+    maxGain: 0.13, priority: 62,
   },
   {
     id: 'tension_drone', category: 'atmosphere',
     requiredIntensity: 0.44, releaseIntensity: 0.34,
     eligible: ['mysterious', 'tense'], forbidden: [],
+    exclusiveWith: [], attackSeconds: 0.34, releaseSeconds: 0.52,
     maxGain: 0.14, priority: 60,
   },
   {
     id: 'streak_stinger', category: 'fx',
     requiredIntensity: 0.30, releaseIntensity: 0.00,
     eligible: ['bright', 'mysterious', 'tense', 'triumphant'], forbidden: ['calm'],
+    exclusiveWith: [], attackSeconds: 0.00, releaseSeconds: 0.00,
     maxGain: 1, priority: 100, trigger: 'hit_streak_5', oneshot: true,
+  },
+  {
+    id: 'crown_chime', category: 'fx',
+    requiredIntensity: 0.72, releaseIntensity: 0.58,
+    eligible: ['triumphant'], forbidden: [],
+    exclusiveWith: [], attackSeconds: 0.00, releaseSeconds: 0.00,
+    maxGain: 1, priority: 92, trigger: 'crown_pressure', oneshot: true,
   },
 ];
 
@@ -1414,21 +1532,65 @@ const Audio = {
       filterEnvelope: { attack: 0.18, decay: 0.55, sustain: 0.28, release: 0.75, baseFrequency: 90, octaves: 1.2 },
       volume: -24,
     }).connect(droneGain);
+    const octaveGain = new Tone.Gain(0).connect(this.musicReverb);
+    const octave = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: m.timbre_profile.lead },
+      envelope: { attack: 0.004, decay: 0.16, sustain: 0.05, release: 0.24 },
+      volume: -22,
+    }).connect(octaveGain);
+    const shimmerGain = new Tone.Gain(0).connect(this.musicReverb);
+    const shimmer = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: m.timbre_profile.pad },
+      envelope: { attack: 0.28, decay: 0.45, sustain: 0.32, release: 0.85 },
+      volume: -25,
+    }).connect(shimmerGain);
+    const walkGain = new Tone.Gain(0).connect(this.musicBus);
+    const walkBass = new Tone.MonoSynth({
+      oscillator: { type: m.timbre_profile.bass },
+      envelope: { attack: 0.01, decay: 0.12, sustain: 0.14, release: 0.18 },
+      filterEnvelope: { attack: 0.01, decay: 0.12, sustain: 0.08, release: 0.18, baseFrequency: 160, octaves: 1.5 },
+      volume: -20,
+    }).connect(walkGain);
+    const hatSurgeGain = new Tone.Gain(0).connect(this.musicBus);
+    const hatSurge = new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.001, decay: 0.032, sustain: 0 },
+      volume: -25,
+    }).connect(hatSurgeGain);
+    const sparkGain = new Tone.Gain(0).connect(this.musicReverb);
+    const arpSpark = new Tone.Synth({
+      oscillator: { type: m.timbre_profile.lead },
+      envelope: { attack: 0.003, decay: 0.09, sustain: 0.07, release: 0.18 },
+      volume: -24,
+    }).connect(sparkGain);
 
-    this.music.synths.push(bass, pad, lead, kick, snare, hat, accentGain, pulseGain, droneGain, accent, pulse, drone);
+    this.music.synths.push(bass, pad, lead, kick, snare, hat, accentGain, pulseGain, droneGain, octaveGain, shimmerGain, walkGain, hatSurgeGain, sparkGain, accent, pulse, drone, octave, shimmer, walkBass, hatSurge, arpSpark);
     this.music.reactivity = {
       intensity: 0,
       lowHp: false,
       accentGain,
       pulseGain,
       droneGain,
+      octaveGain,
+      shimmerGain,
+      walkGain,
+      hatSurgeGain,
+      sparkGain,
       accent,
       pulse,
       drone,
+      octave,
+      shimmer,
+      walkBass,
+      hatSurge,
+      arpSpark,
       activeFeatures: new Set(),
       featureState: Object.create(null),
       lastFeatureReconcileAt: 0,
+      lastReconcileBar: null,
+      lastReconcileReason: 'init',
       lastStreakStingerAt: 0,
+      lastCrownChimeAt: 0,
       lastIntensityFloatAt: 0,
     };
 
@@ -1508,7 +1670,56 @@ const Audio = {
       react.drone.triggerAttackRelease(rootDrone, '2n', time, 0.22 + react.intensity * 0.15);
     }, '2m').start('0:0:0');
 
-    this.music.parts.push(chordPart, arp, drumLoop, intensityStabs, lowHpPulse, tensionDrone);
+    const octaveStabs = new Tone.Loop((time) => {
+      const react = this.music.reactivity;
+      if (!react || !react.activeFeatures?.has('octave_stabs')) return;
+      const bar = Math.floor(Tone.Transport.position.toString().split(':')[0]);
+      const i = Math.floor(bar / barsPerChord) % progression.length;
+      const degree = progression[i];
+      const chord = buildChord(rootMidi, scaleSemis, degree).map(note => Tone.Frequency(note).transpose(24).toNote());
+      react.octave.triggerAttackRelease(chord, '16n', time, 0.22 + react.intensity * 0.10);
+    }, '1m').start('0:0:0');
+
+    const shimmerPads = new Tone.Loop((time) => {
+      const react = this.music.reactivity;
+      if (!react || !react.activeFeatures?.has('pad_shimmer')) return;
+      const bar = Math.floor(Tone.Transport.position.toString().split(':')[0]);
+      const i = Math.floor(bar / barsPerChord) % progression.length;
+      const degree = progression[i];
+      const chord = buildChord(rootMidi, scaleSemis, degree).map(note => Tone.Frequency(note).transpose(12).toNote());
+      react.shimmer.triggerAttackRelease(chord, '2n', time, 0.18 + react.intensity * 0.10);
+    }, '2m').start('0:0:0');
+
+    let walkStep = 0;
+    const walkingBass = new Tone.Loop((time) => {
+      const react = this.music.reactivity;
+      if (!react || !react.activeFeatures?.has('bass_walk')) return;
+      const offsets = [0, 4, 7, 10];
+      const note = midiToNote(rootMidi - 12 + offsets[walkStep % offsets.length]);
+      react.walkBass.triggerAttackRelease(note, '16n', time, 0.24 + react.intensity * 0.08);
+      walkStep++;
+    }, '4n').start('0:0:0');
+
+    const surgeHats = new Tone.Loop((time) => {
+      const react = this.music.reactivity;
+      if (!react || !react.activeFeatures?.has('hat_surge')) return;
+      if (RNG.random() < 0.60 + react.intensity * 0.26) react.hatSurge.triggerAttackRelease('32n', time, 0.22);
+    }, '8n').start('0:0:2');
+
+    let sparkleStep = 0;
+    const sparkArp = new Tone.Loop((time) => {
+      const react = this.music.reactivity;
+      if (!react || !react.activeFeatures?.has('arp_spark')) return;
+      const bar = Math.floor(Tone.Transport.position.toString().split(':')[0]);
+      const i = Math.floor(bar / barsPerChord) % progression.length;
+      const degree = progression[i];
+      const chord = buildChord(rootMidi, scaleSemis, degree);
+      const note = Tone.Frequency(chord[sparkleStep % chord.length]).transpose(24).toNote();
+      react.arpSpark.triggerAttackRelease(note, '32n', time, 0.18 + react.intensity * 0.07);
+      sparkleStep++;
+    }, '4n').start('0:1:0');
+
+    this.music.parts.push(chordPart, arp, drumLoop, intensityStabs, lowHpPulse, tensionDrone, octaveStabs, shimmerPads, walkingBass, surgeHats, sparkArp);
     this.music.active = true;
   },
   stopMusic() {
@@ -1529,12 +1740,15 @@ const Audio = {
     react.intensity = intensity;
     react.lowHp = lowHp;
 
-    // Reconcile metadata-driven feature states on a bounded cadence. This is the
-    // lightweight in-browser MusicDirector: thresholds, hysteresis, mood filters,
-    // one-shot triggers, and per-category caps all live here instead of ad hoc branches.
     const now = performance.now();
-    if (now - react.lastFeatureReconcileAt >= 420) {
+    const positionString = String(Tone.Transport.position || '0:0:0');
+    const currentBar = Number(positionString.split(':')[0]) || 0;
+    const barChanged = react.lastReconcileBar !== currentBar;
+    const timerFallback = now - react.lastFeatureReconcileAt >= 1800;
+    if (barChanged || timerFallback) {
       react.lastFeatureReconcileAt = now;
+      react.lastReconcileBar = currentBar;
+      react.lastReconcileReason = barChanged ? `bar ${currentBar}` : 'timer fallback';
       const desired = [];
       for (const feature of MUSIC_FEATURES) {
         if (!musicFeatureAllowed(feature, moodId)) {
@@ -1546,48 +1760,66 @@ const Audio = {
           ? lowHp
           : feature.trigger === 'hit_streak_5'
             ? hitStreak >= 5
-            : true;
+            : feature.trigger === 'crown_pressure'
+              ? moodId === 'triumphant' && intensity >= feature.requiredIntensity
+              : true;
         const threshold = wasActive ? feature.releaseIntensity : feature.requiredIntensity;
         const active = triggerSatisfied && intensity >= threshold;
         react.featureState[feature.id] = active;
         if (active) desired.push(feature);
       }
 
-      // Keep the active loop set bounded by category. One feature per loop category
-      // in this build; fx one-shots do not consume loop budget.
       const picked = [];
+      const pickedIds = new Set();
       const categoryUse = new Set();
       desired
         .filter(feature => !feature.oneshot)
         .sort((a, b) => (b.priority || 0) - (a.priority || 0))
         .forEach(feature => {
           if (categoryUse.has(feature.category)) return;
+          const blocked = (feature.exclusiveWith || []).some(id => pickedIds.has(id));
+          if (blocked) return;
           categoryUse.add(feature.category);
+          pickedIds.add(feature.id);
           picked.push(feature.id);
         });
       react.activeFeatures = new Set(picked);
     }
 
-    const stabFeature = MUSIC_FEATURES.find(feature => feature.id === 'accent_stabs');
-    const pulseFeature = MUSIC_FEATURES.find(feature => feature.id === 'low_hp_throb');
-    const droneFeature = MUSIC_FEATURES.find(feature => feature.id === 'tension_drone');
-    const stabGain = react.activeFeatures.has('accent_stabs')
-      ? Math.min(stabFeature.maxGain, Math.max(0.05, (intensity - 0.44) * 0.52))
-      : 0;
-    const pulseGain = react.activeFeatures.has('low_hp_throb')
-      ? pulseFeature.maxGain
-      : 0;
-    const droneGain = react.activeFeatures.has('tension_drone')
-      ? Math.min(droneFeature.maxGain, 0.05 + intensity * 0.10)
-      : 0;
-    react.accentGain.gain.rampTo(stabGain, 0.18);
-    react.pulseGain.gain.rampTo(pulseGain, 0.22);
-    react.droneGain.gain.rampTo(droneGain, 0.32);
+    const feature = id => MUSIC_FEATURES.find(item => item.id === id);
+    const rampGain = (id, gainNode, value) => {
+      const meta = feature(id);
+      if (!meta || !gainNode?.gain?.rampTo) return;
+      const active = react.activeFeatures.has(id);
+      gainNode.gain.rampTo(active ? value : 0, active ? (meta.attackSeconds ?? 0.18) : (meta.releaseSeconds ?? 0.24));
+    };
+    const stabFeature = feature('accent_stabs');
+    const pulseFeature = feature('low_hp_throb');
+    const droneFeature = feature('tension_drone');
+    const octaveFeature = feature('octave_stabs');
+    const shimmerFeature = feature('pad_shimmer');
+    const walkFeature = feature('bass_walk');
+    const hatFeature = feature('hat_surge');
+    const sparkFeature = feature('arp_spark');
+
+    rampGain('accent_stabs', react.accentGain, Math.min(stabFeature.maxGain, Math.max(0.05, (intensity - 0.44) * 0.52)));
+    rampGain('low_hp_throb', react.pulseGain, pulseFeature.maxGain);
+    rampGain('tension_drone', react.droneGain, Math.min(droneFeature.maxGain, 0.05 + intensity * 0.10));
+    rampGain('octave_stabs', react.octaveGain, Math.min(octaveFeature.maxGain, 0.06 + intensity * 0.14));
+    rampGain('pad_shimmer', react.shimmerGain, Math.min(shimmerFeature.maxGain, 0.05 + intensity * 0.10));
+    rampGain('bass_walk', react.walkGain, Math.min(walkFeature.maxGain, 0.05 + intensity * 0.12));
+    rampGain('hat_surge', react.hatSurgeGain, Math.min(hatFeature.maxGain, 0.04 + intensity * 0.08));
+    rampGain('arp_spark', react.sparkGain, Math.min(sparkFeature.maxGain, 0.05 + intensity * 0.09));
 
     const stingerActive = !!react.featureState.streak_stinger;
     if (stingerActive && now - react.lastStreakStingerAt > 2600) {
       react.lastStreakStingerAt = now;
       this.sfxStreak();
+    }
+    const crownActive = !!react.featureState.crown_chime;
+    if (crownActive && now - react.lastCrownChimeAt > 5200) {
+      react.lastCrownChimeAt = now;
+      this.sfxCrownChime();
     }
   },
 
@@ -1675,6 +1907,17 @@ const Audio = {
     }).connect(this.sfxBus);
     synth.triggerAttackRelease(['E5', 'G5', 'B5'], '8n');
     setTimeout(() => synth.dispose(), 520);
+  },
+  sfxCrownChime() {
+    if (!this.ready) return;
+    const synth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.006, decay: 0.24, sustain: 0.10, release: 0.38 },
+      volume: -16,
+    }).connect(this.sfxBus);
+    synth.triggerAttackRelease(['G5', 'B5', 'D6'], '8n');
+    setTimeout(() => synth.triggerAttackRelease(['A5', 'C6', 'E6'], '8n'), 115);
+    setTimeout(() => synth.dispose(), 760);
   },
   sfxWave() {
     if (!this.ready) return;
@@ -1785,6 +2028,16 @@ class EventRandomizer {
       }
     }
   }
+  force(id, ctxData) {
+    const e = this.events.find(evt => evt.id === id);
+    if (!e) return null;
+    e.lastFired = performance.now();
+    e.effect(ctxData || {});
+    return e.id;
+  }
+  ids() {
+    return this.events.map(evt => evt.id);
+  }
 }
 
 /* ---------- GAME STATE ---------- */
@@ -1818,15 +2071,41 @@ window.addEventListener('resize', resize);
 /* ---------- INPUT ---------- */
 const input = {
   left: false, right: false, up: false, down: false,
-  punch: false, kick: false, jump: false,
+  moveX: 0, moveY: 0, analogActive: false,
+  punch: false, kick: false, jump: false, special: false,
   // edge-triggered flags
-  punchPressed: false, kickPressed: false, jumpPressed: false,
+  punchPressed: false, kickPressed: false, jumpPressed: false, specialPressed: false,
 };
+function clearAnalogMovement() {
+  input.moveX = 0; input.moveY = 0; input.analogActive = false;
+  const pad = document.getElementById('analog-pad');
+  const knob = document.getElementById('analog-knob');
+  if (pad) pad.classList.remove('active');
+  if (knob) knob.style.transform = 'translate(0px, 0px)';
+}
+function directionalMoveX() {
+  const analog = Math.abs(input.moveX) > 0.035 ? input.moveX : 0;
+  if (analog) return analog;
+  return (input.right ? 1 : 0) - (input.left ? 1 : 0);
+}
+function directionalMoveY() {
+  const analog = Math.abs(input.moveY) > 0.035 ? input.moveY : 0;
+  if (analog) return analog;
+  return (input.down ? 1 : 0) - (input.up ? 1 : 0);
+}
+function throwAimY() {
+  const raw = directionalMoveY();
+  return Math.max(-0.85, Math.min(0.85, raw * 0.85));
+}
+function upwardAdvanceIntent() {
+  return Math.max(0, -directionalMoveY());
+}
 function setBtn(act, val) {
   if (val && !input[act]) {
-    if (act === 'punch') input.punchPressed = true;
-    if (act === 'kick')  input.kickPressed  = true;
-    if (act === 'jump')  input.jumpPressed  = true;
+    if (act === 'punch')   input.punchPressed   = true;
+    if (act === 'kick')    input.kickPressed    = true;
+    if (act === 'jump')    input.jumpPressed    = true;
+    if (act === 'special') input.specialPressed = true;
   }
   input[act] = val;
 }
@@ -1852,7 +2131,53 @@ function bindActionBtn(btn) {
   btn.addEventListener('mouseup', release);
   btn.addEventListener('mouseleave', release);
 }
-document.querySelectorAll('.dpad button[data-dir]').forEach(bindDpadBtn);
+function bindAnalogPad(pad) {
+  if (!pad) return;
+  const knob = document.getElementById('analog-knob');
+  let pointerId = null;
+  const maxTravelRatio = 0.34;
+  const updateFromEvent = (e) => {
+    const rect = pad.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const rawX = e.clientX - cx;
+    const rawY = e.clientY - cy;
+    const maxTravel = Math.max(18, Math.min(rect.width, rect.height) * maxTravelRatio);
+    const dist = Math.hypot(rawX, rawY) || 1;
+    const clamp = Math.min(1, maxTravel / dist);
+    const dx = rawX * clamp;
+    const dy = rawY * clamp;
+    input.moveX = Math.max(-1, Math.min(1, dx / maxTravel));
+    input.moveY = Math.max(-1, Math.min(1, dy / maxTravel));
+    input.analogActive = true;
+    pad.classList.add('active');
+    if (knob) knob.style.transform = `translate(${dx}px, ${dy}px)`;
+  };
+  const start = (e) => {
+    e.preventDefault();
+    pointerId = e.pointerId;
+    try { pad.setPointerCapture(pointerId); } catch (_) {}
+    updateFromEvent(e);
+    haptic(8);
+  };
+  const move = (e) => {
+    if (pointerId !== e.pointerId) return;
+    e.preventDefault();
+    updateFromEvent(e);
+  };
+  const end = (e) => {
+    if (pointerId !== null && e.pointerId !== pointerId) return;
+    e.preventDefault();
+    pointerId = null;
+    clearAnalogMovement();
+  };
+  pad.addEventListener('pointerdown', start, { passive: false });
+  pad.addEventListener('pointermove', move, { passive: false });
+  pad.addEventListener('pointerup', end, { passive: false });
+  pad.addEventListener('pointercancel', end, { passive: false });
+  pad.addEventListener('lostpointercapture', end, { passive: false });
+}
+bindAnalogPad(document.getElementById('analog-pad'));
 document.querySelectorAll('.act-btn').forEach(bindActionBtn);
 
 // Keyboard for desktop
@@ -1865,6 +2190,7 @@ window.addEventListener('keydown', (e) => {
     case 'arrowdown': case 's': setBtn('down', true); break;
     case 'j': setBtn('punch', true); break;
     case 'k': setBtn('kick', true); break;
+    case 'l': setBtn('special', true); break;
     case ' ': setBtn('jump', true); e.preventDefault(); break;
   }
 });
@@ -1876,6 +2202,7 @@ window.addEventListener('keyup', (e) => {
     case 'arrowdown': case 's': setBtn('down', false); break;
     case 'j': setBtn('punch', false); break;
     case 'k': setBtn('kick', false); break;
+    case 'l': setBtn('special', false); break;
     case ' ': setBtn('jump', false); break;
   }
 });
@@ -2134,7 +2461,7 @@ class Fighter {
       const carrier = this.grabbedBy;
       this.x = carrier.x + carrier.facing * 16;
       this.y = carrier.y - 2;
-      this.z = 22;
+      this.z = (carrier.z || 0) + 22;
       this.vz = 0;
       this.state = 'hurt';
       this.aiTelegraphTime = 0;
@@ -2224,10 +2551,8 @@ class Fighter {
       const preserveAttackState = this.state === 'attack';
       let mx = 0, my = 0;
       if (this.isPlayer) {
-        if (input.left)  mx -= 1;
-        if (input.right) mx += 1;
-        if (input.up)    my -= 1;
-        if (input.down)  my += 1;
+        mx = directionalMoveX();
+        my = directionalMoveY();
       } else {
         // AI: pursue player unless briefly stunned by heavy hits, making them grabbable.
         if (this.stunTime > 0) {
@@ -2398,7 +2723,7 @@ class Fighter {
       const swing = Math.sin(phase * Math.PI);
       const stepBoost = Math.max(0, (this.attackStep || 1) - 1) * 5;
       if (this.attackType === 'punch') {
-        // V8: visibly distinct jab / cross / hook families instead of a single lengthened arm.
+        // V11 retained: visibly distinct jab / cross / hook families instead of a single lengthened arm.
         const poseStep = Math.max(1, Math.min(3, this.attackStep || 1));
         const ax = cx + f * (10 + swing * (16 + stepBoost));
         const ay = baseY - this.h * (poseStep === 3 ? 0.64 : poseStep === 2 ? 0.68 : 0.72) - bob;
@@ -2432,7 +2757,7 @@ class Fighter {
           g.restore();
         }
       } else if (this.attackType === 'kick') {
-        // V8: front kick, roundhouse, and spin-finisher silhouettes.
+        // V11 retained: front kick, roundhouse, and spin-finisher silhouettes.
         const poseStep = Math.max(1, Math.min(3, this.attackStep || 1));
         const ax = cx + f * (8 + swing * (20 + stepBoost));
         const ay = baseY - this.h * (poseStep === 3 ? 0.48 : poseStep === 2 ? 0.52 : 0.56) - bob;
@@ -2656,6 +2981,7 @@ class Prop {
       barrel: { w: 24, h: 30, damage: 30, tossVz: 175, mass: 1.25 },
       tire:   { w: 28, h: 18, damage: 18, tossVz: 210, mass: 0.8 },
       bottle: { w: 14, h: 22, damage: 38, tossVz: 225, mass: 0.55 },
+      pipe:   { w: 32, h: 10, damage: 46, tossVz: 205, mass: 0.72 },
     };
     Object.assign(this, specs[type] || specs.crate);
   }
@@ -2689,12 +3015,17 @@ class Prop {
     this.z = 0;
     this.vx = this.vy = this.vz = 0;
   }
+
+
+
+
+
   update(dt) {
     this.t += dt;
     if (this.heldBy) {
       this.x = this.heldBy.x + this.heldBy.facing * 18;
       this.y = this.heldBy.y - 2;
-      this.z = 26;
+      this.z = (this.heldBy.z || 0) + 26;
       this.rotation = Math.sin(this.t * 6) * 0.08;
       return;
     }
@@ -2736,6 +3067,19 @@ class Prop {
       g.beginPath(); g.ellipse(0, 0, this.w/2, this.h/2, 0, 0, Math.PI*2); g.fill();
       g.fillStyle = '#666';
       g.beginPath(); g.ellipse(0, 0, this.w/4, this.h/4, 0, 0, Math.PI*2); g.fill();
+    } else if (this.type === 'pipe') {
+      g.strokeStyle = '#b8c1cc';
+      g.lineWidth = 6;
+      g.lineCap = 'round';
+      g.shadowColor = 'rgba(34,211,238,0.55)';
+      g.shadowBlur = 10;
+      g.beginPath();
+      g.moveTo(-this.w/2, 0);
+      g.lineTo(this.w/2, 0);
+      g.stroke();
+      g.shadowBlur = 0;
+      g.fillStyle = '#e2e8f0';
+      g.fillRect(this.w/2 - 4, -3, 5, 6);
     } else if (this.type === 'bottle') {
       g.fillStyle = '#7bd389';
       g.fillRect(-this.w/2, -this.h/2 + 3, this.w, this.h - 3);
@@ -2828,6 +3172,17 @@ class World {
     this.specialBuffTime = 0;
     this.specialBuffDamageMult = 1;
     this.specialRings = [];
+    this.gameplayEventLog = [];
+    this.qaForcedEventIndex = 0;
+    this.neonTrails = [];
+    this.levelAdvanceReady = false;
+    this.levelTransitionActive = false;
+    this.levelTransitionProgress = 0;
+    this.levelTransitionDistance = 0;
+    this.levelScrollOffset = 0;
+    this.levelTransitionPlayerAnchorY = null;
+    this.levelIncoming = { props: [], weapons: [] };
+    this.nextMoodId = null;
 
     // Sparkle randomizer
     this.sparkleRng = new EventRandomizer();
@@ -2846,7 +3201,7 @@ class World {
       effect: (ctx) => this.spawnSparkleBurst(),
     });
 
-    // Gameplay event randomizer
+    // Gameplay event randomizer: bounded, inspectable dramatic spice layer.
     this.eventRng = new EventRandomizer();
     this.eventRng.register({
       id: 'event.health_drop',
@@ -2854,7 +3209,7 @@ class World {
       probability: 0.4, cooldownMs: 8000,
       lambda: 0.25,
       trigger: () => this.player.hp < this.player.maxHp * 0.6,
-      effect: () => this.spawnPickup('health'),
+      effect: () => { this.spawnPickup('health'); this.recordGameplayEvent('event.health_drop'); },
     });
     this.eventRng.register({
       id: 'event.lightning',
@@ -2862,7 +3217,7 @@ class World {
       probability: 0.18, cooldownMs: 15000,
       lambda: 0.15,
       trigger: () => this.mood.affect.arousal > 0.55,
-      effect: () => { this.flash(this.mood.accent_colors[0], 0.15); },
+      effect: () => { this.flash(this.mood.accent_colors[0], 0.15); this.recordGameplayEvent('event.lightning'); },
     });
     this.eventRng.register({
       id: 'event.thug_dash',
@@ -2873,7 +3228,56 @@ class World {
       effect: () => {
         const e = this.enemies[Math.floor(RNG.random() * this.enemies.length)];
         if (e && e.isAlive) e.speed *= 1.3;
+        this.recordGameplayEvent('event.thug_dash');
       },
+    });
+    this.eventRng.register({
+      id: 'event.prop_barrel_drop',
+      rarityTier: 'uncommon',
+      probability: 0.28, cooldownMs: 12000,
+      lambda: 0.22,
+      trigger: () => this.wave >= 2 && this.props.filter(p => !p.dead).length < 7,
+      effect: () => this.spawnEventBarrelDrop(),
+    });
+    this.eventRng.register({
+      id: 'event.score_pickup',
+      rarityTier: 'uncommon',
+      probability: 0.30, cooldownMs: 10000,
+      lambda: 0.22,
+      trigger: () => this.wave >= 2,
+      effect: () => { this.spawnPickup('coin'); this.recordGameplayEvent('event.score_pickup'); },
+    });
+    this.eventRng.register({
+      id: 'event.special_meter_spark',
+      rarityTier: 'rare',
+      probability: 0.22, cooldownMs: 14000,
+      lambda: 0.18,
+      trigger: () => this.mood.affect.arousal >= 0.5 && this.specialMeter < 92,
+      effect: () => this.triggerSpecialMeterSpark(),
+    });
+    this.eventRng.register({
+      id: 'event.mood_particle_surge',
+      rarityTier: 'uncommon',
+      probability: 0.30, cooldownMs: 9000,
+      lambda: 0.20,
+      trigger: () => true,
+      effect: () => this.triggerMoodParticleSurge(),
+    });
+    this.eventRng.register({
+      id: 'event.enemy_pack_shift',
+      rarityTier: 'rare',
+      probability: 0.22, cooldownMs: 15000,
+      lambda: 0.18,
+      trigger: () => this.enemies.filter(e => e.isAlive).length < Math.min(6, this.gameplayMood.maxConcurrent + 1),
+      effect: () => this.triggerEnemyPackShift(),
+    });
+    this.eventRng.register({
+      id: 'event.music_stinger_echo',
+      rarityTier: 'rare',
+      probability: 0.20, cooldownMs: 16000,
+      lambda: 0.16,
+      trigger: () => Audio.ready && this.mood.affect.power >= 0.5,
+      effect: () => this.triggerMusicStingerEcho(),
     });
 
     this.pickups = [];
@@ -2898,6 +3302,10 @@ class World {
   moodForWave(wave) {
     if (settings.practiceMode) return settings.previewMood || 'tense';
     return this.runArc.find(stage => wave >= stage.fromWave && wave <= stage.toWave)?.mood || 'triumphant';
+  }
+  moodIdForWave(wave) {
+    const stage = this.runArc.find(stage => wave >= stage.fromWave && wave <= stage.toWave) || this.runArc[this.runArc.length - 1];
+    return settings.practiceMode ? settings.previewMood : (stage?.mood || this.currentMoodId || settings.previewMood);
   }
   moodBannerForWave(wave) {
     return this.runArc.find(stage => wave >= stage.fromWave && wave <= stage.toWave)?.banner || 'CROWN';
@@ -2941,6 +3349,15 @@ class World {
     this.specialBuffTime = 0;
     this.specialBuffDamageMult = 1;
     this.specialRings.length = 0;
+    this.neonTrails.length = 0;
+    this.levelAdvanceReady = false;
+    this.levelTransitionActive = false;
+    this.levelTransitionProgress = 0;
+    this.levelTransitionDistance = 0;
+    this.levelScrollOffset = 0;
+    this.levelTransitionPlayerAnchorY = null;
+    this.levelIncoming = { props: [], weapons: [] };
+    this.nextMoodId = null;
     this.arcId = chooseArcId(settings.arcSelection);
     this.runArc = ARC_LIBRARY[this.arcId]?.stages || ARC_LIBRARY.firstNightOut.stages;
     this.updateRunMetaBadge();
@@ -3014,13 +3431,28 @@ class World {
   throwBottleWeapon() {
     const weapon = this.player.heldWeapon;
     if (!weapon || weapon.type !== 'bottle') return false;
-    const dirY = input.up ? -0.75 : input.down ? 0.75 : 0;
+    const dirY = throwAimY();
     const bottle = new Prop('bottle', this.player.x + this.player.facing * 12, this.player.y - 4);
     bottle.throwFrom(this.player, this.player.facing, dirY);
     this.props.push(bottle);
     this.player.heldWeapon = null;
     this.addFloat('BOTTLE!', this.player.x + this.player.facing * 24, this.player.y - 86, this.mood.accent_colors[0]);
     Audio.sfxThrow(); haptic(28); this.shake(3);
+    return true;
+  }
+  throwPipeWeapon() {
+    const weapon = this.player.heldWeapon;
+    if (!weapon || weapon.type !== 'pipe') return false;
+    const dirY = throwAimY();
+    const pipe = new Prop('pipe', this.player.x + this.player.facing * 14, this.player.y - 6);
+    pipe.damage = Math.max(pipe.damage, 46 + Math.max(0, weapon.durability - 1) * 2);
+    pipe.throwFrom(this.player, this.player.facing, dirY);
+    pipe.vx *= 1.08;
+    pipe.vz += 18;
+    this.props.push(pipe);
+    this.player.heldWeapon = null;
+    this.addFloat('PIPE THROW!', this.player.x + this.player.facing * 28, this.player.y - 92, this.mood.primary_colors[0]);
+    Audio.sfxThrow(); haptic(34); this.shake(4);
     return true;
   }
   throwEnemyBottle(enemy) {
@@ -3066,7 +3498,7 @@ class World {
   throwHeldProp() {
     const prop = this.player.heldProp;
     if (!prop) return false;
-    const dirY = input.up ? -0.75 : input.down ? 0.75 : 0;
+    const dirY = throwAimY();
     prop.throwFrom(this.player, this.player.facing, dirY);
     this.player.heldProp = null;
     this.addFloat('HURL!', this.player.x + this.player.facing * 24, this.player.y - 86, this.mood.accent_colors[0]);
@@ -3095,7 +3527,7 @@ class World {
   throwGrabbedEnemy() {
     const enemy = this.player.grabbedEnemy;
     if (!enemy) return false;
-    const dirY = input.up ? -0.75 : input.down ? 0.75 : 0;
+    const dirY = throwAimY();
     enemy.grabbedBy = null;
     enemy.isThrown = true;
     enemy.throwDamageArmed = true;
@@ -3150,7 +3582,7 @@ class World {
     if (!this.player?.isAlive || this.specialMeter < 100) return false;
     if (this.player.heldProp || this.player.grabbedEnemy || this.player.grabbedBy || this.player.isThrown) return false;
 
-    const moodId = this.currentMoodId || settings.previewMood || 'tense';
+    const moodId = m.mood_id || this.currentMoodId || settings.previewMood || 'tense';
     const x0 = this.player.x;
     const y0 = this.player.y;
     let effectLabel = 'SPECIAL!';
@@ -3375,6 +3807,126 @@ class World {
     this.cameraShake = Math.max(this.cameraShake, amt * mult);
   }
 
+  prepareLevelTransition(nextWave) {
+    this.levelTransitionActive = true;
+    this.levelAdvanceReady = true;
+    this.levelTransitionProgress = 0.001;
+    this.levelScrollOffset = 0;
+    this.levelTransitionDistance = Math.max(220, Math.min(H * 0.62, 440));
+    this.levelTransitionPlayerAnchorY = this.player ? this.player.y : (groundY - 30);
+    this.nextMoodId = this.moodIdForWave(nextWave);
+    this.levelIncoming = this.buildIncomingLevelObjects(nextWave);
+    this.flash(this.mood.primary_colors[0], 0.08);
+    if (this.player) this.addFloat('ASCEND!', this.player.x, this.player.y - 104, this.mood.accent_colors[0]);
+  }
+
+  buildIncomingLevelObjects(nextWave) {
+    const nextMoodId = this.moodIdForWave(nextWave);
+    const nextProfile = getEmotionProfile(nextMoodId);
+    const propDensity = nextProfile.gameplay.prop_density || 1;
+    const propTarget = Math.min(5, Math.max(1, Math.round((1 + Math.floor(nextWave / 3)) * propDensity)));
+    const propVariants = new CombinatorialVariantSet('transition_prop_spawn', [
+      { value: 'crate', weight: 52 },
+      { value: 'barrel', weight: 31, minWave: 2 },
+      { value: 'tire', weight: 17, minWave: 3 },
+    ]);
+    const props = [];
+    for (let i = 0; i < propTarget; i++) {
+      const type = propVariants.choose({ mood: nextMoodId, wave: nextWave }) || 'crate';
+      const x = 52 + RNG.random() * Math.max(96, W - 104);
+      const targetY = backY + 28 + RNG.random() * Math.max(50, groundY - backY - 52);
+      const startY = backY - 88 - i * 26 - RNG.random() * 34;
+      const prop = new Prop(type, x, startY);
+      prop.transitionStartY = startY;
+      prop.transitionTargetY = targetY;
+      prop.transitionIncoming = true;
+      props.push(prop);
+    }
+
+    const weapons = [];
+    if (nextWave >= 3) {
+      const weaponVariants = new CombinatorialVariantSet('transition_weapon_spawn', [
+        { value: 'pipe', weight: 66 },
+        { value: 'bottle', weight: 34, minWave: 4 },
+      ]);
+      const type = weaponVariants.choose({ mood: nextMoodId, wave: nextWave }) || 'pipe';
+      const x = 72 + RNG.random() * Math.max(80, W - 144);
+      const targetY = backY + 42 + RNG.random() * Math.max(40, groundY - backY - 58);
+      const startY = backY - 114 - RNG.random() * 44;
+      const weapon = new WeaponPickup(type, x, startY);
+      weapon.transitionStartY = startY;
+      weapon.transitionTargetY = targetY;
+      weapon.transitionIncoming = true;
+      weapons.push(weapon);
+    }
+
+    return { props, weapons, moodId: nextMoodId };
+  }
+
+  updateVerticalLevelTransition(dt, upIntent) {
+    const intent = Math.max(0.22, upIntent || 0);
+    const scrollDelta = dt * (92 + intent * 150);
+    this.levelScrollOffset = Math.min(this.levelTransitionDistance, this.levelScrollOffset + scrollDelta);
+    this.levelTransitionProgress = Math.max(0.001, Math.min(1, this.levelScrollOffset / Math.max(1, this.levelTransitionDistance)));
+    const eased = this.levelTransitionProgress * this.levelTransitionProgress * (3 - 2 * this.levelTransitionProgress);
+
+    // The player stays fixed in screen/world space. The old environment drops away.
+    if (this.player && this.levelTransitionPlayerAnchorY != null) {
+      this.player.y = this.levelTransitionPlayerAnchorY;
+    }
+
+    const scrollObject = (obj, factor = 1) => {
+      if (!obj || obj.dead || obj.heldBy) return;
+      obj.y += scrollDelta * factor;
+    };
+    for (const prop of this.props) scrollObject(prop, 1.02);
+    for (const weapon of this.weapons) scrollObject(weapon, 0.98);
+    for (const pickup of this.pickups) scrollObject(pickup, 1.05);
+    for (const sparkle of this.sparkles) sparkle.y += scrollDelta * 0.56;
+
+    this.props = this.props.filter(prop => prop.heldBy || (!prop.dead && prop.y < H + 120));
+    this.weapons = this.weapons.filter(weapon => !weapon.dead && weapon.y < H + 120);
+    this.pickups = this.pickups.filter(pickup => !pickup.dead && pickup.y < H + 120);
+    this.sparkles = this.sparkles.filter(sparkle => sparkle.y < H + 100 && sparkle.life > 0);
+
+    // New stage objects roll in from above the horizon.
+    for (const prop of this.levelIncoming.props || []) {
+      prop.y = prop.transitionStartY + (prop.transitionTargetY - prop.transitionStartY) * eased;
+      prop.t += dt;
+    }
+    for (const weapon of this.levelIncoming.weapons || []) {
+      weapon.y = weapon.transitionStartY + (weapon.transitionTargetY - weapon.transitionStartY) * eased;
+      weapon.t += dt;
+    }
+
+    if (this.levelTransitionProgress >= 1) this.finalizeLevelTransition();
+  }
+
+  finalizeLevelTransition() {
+    const incoming = this.levelIncoming || { props: [], weapons: [] };
+    const carriedProps = this.props.filter(prop => prop.heldBy);
+    this.wave++;
+    this.enemiesPerWave = 3 + Math.floor(this.wave * 0.7);
+    this.enemiesSpawned = 0;
+    this.bossSpawned = false;
+    this.waveCleared = false;
+    this.levelAdvanceReady = false;
+    this.levelTransitionActive = false;
+    this.levelTransitionProgress = 0;
+    this.levelTransitionDistance = 0;
+    this.levelScrollOffset = 0;
+    this.levelTransitionPlayerAnchorY = null;
+    this.props = [...carriedProps, ...(incoming.props || [])];
+    this.weapons = [...(incoming.weapons || [])];
+    this.pickups = [];
+    this.sparkles = [];
+    this.levelIncoming = { props: [], weapons: [] };
+    this.nextMoodId = null;
+    this.syncRunMood(false);
+    const [spawnMin, spawnMax] = this.gameplayMood.spawnInterval;
+    this.spawnTimer = spawnMin + RNG.random() * (spawnMax - spawnMin);
+  }
+
   update(dt) {
     if (this.specialBuffTime > 0) {
       this.specialBuffTime = Math.max(0, this.specialBuffTime - dt);
@@ -3386,13 +3938,17 @@ class World {
       if (this.specialMeter < 100) this.specialReadyAnnounced = false;
     }
 
-    // Special chord input: on mobile, hold one attack button and tap the other.
+    // Special input: the diamond-pad SPECIAL button fires directly; PUNCH+KICK chord remains supported.
     const specialChordPressed = input.punch && input.kick && (input.punchPressed || input.kickPressed);
-    if (specialChordPressed && this.useSpecial()) {
+    const directSpecialPressed = input.specialPressed;
+    if ((directSpecialPressed || specialChordPressed) && this.useSpecial()) {
+      input.specialPressed = false;
       input.punchPressed = false;
       input.kickPressed = false;
       this.holdAttackTimer.punch = 0.48;
       this.holdAttackTimer.kick = 0.48;
+    } else {
+      input.specialPressed = false;
     }
 
     // Edge-triggered attacks + hold-to-attack. Holding keeps pressure; timed taps unlock hit-confirmed combo steps.
@@ -3420,6 +3976,7 @@ class World {
     }
     if (input.kickPressed) {
       if (this.player.heldProp) this.dropHeldProp();
+      else if (this.player.heldWeapon?.type === 'pipe') this.throwPipeWeapon();
       else tryAttack('kick', 0.42, 'tap');
       input.kickPressed = false;
     }
@@ -3637,31 +4194,41 @@ class World {
         }
       } else if (this.enemies.length === 0 && !this.waveCleared) {
         this.waveCleared = true;
-        this.waveTransition = 2.0;
+        this.waveTransition = 0;
+        this.levelAdvanceReady = true;
+        this.levelTransitionActive = false;
+        this.levelTransitionProgress = 0;
+        this.levelTransitionDistance = 0;
+        this.levelScrollOffset = 0;
+        this.levelTransitionPlayerAnchorY = null;
+        this.levelIncoming = { props: [], weapons: [] };
+        this.nextMoodId = this.moodIdForWave(this.wave + 1);
         this.score += 50 * this.wave;
         this.addFloat(`WAVE ${this.wave} CLEAR! +${50*this.wave}`, W/2, H/2, this.mood.primary_colors[0]);
+        this.addFloat('MOVE UP → NEXT LEVEL', W/2, backY + 44, this.mood.secondary_colors[0] || this.mood.primary_colors[0]);
         Audio.sfxWave();
         this.spawnSparkleBurst();
       }
       if (this.waveCleared) {
-        this.waveTransition -= dt;
-        if (this.waveTransition <= 0) {
-          this.wave++;
-          this.enemiesPerWave = 3 + Math.floor(this.wave * 0.7);
-          this.enemiesSpawned = 0;
-          this.bossSpawned = false;
-          this.waveCleared = false;
-          this.syncRunMood(false);
-          this.seedPropsForWave();
-          const [spawnMin, spawnMax] = this.gameplayMood.spawnInterval;
-          this.spawnTimer = spawnMin + RNG.random() * (spawnMax - spawnMin);
+        const upIntent = upwardAdvanceIntent();
+        if (this.levelAdvanceReady && !this.levelTransitionActive && upIntent > 0.22) {
+          this.prepareLevelTransition(this.wave + 1);
+        }
+        if (this.levelTransitionActive) {
+          this.updateVerticalLevelTransition(dt, upIntent);
         }
       }
     }
 
-    // Sparkle + event randomizers
+    // Sparkle + event randomizers. Gameplay events pause during level-advance
+    // staging so they cannot spawn surprise enemies or props mid-transition.
     this.sparkleRng.tick({});
-    this.eventRng.tick({});
+    if (!this.waveCleared && !this.levelTransitionActive) this.eventRng.tick({});
+
+    // Player attack trails are short-lived neon ribbons that follow each strike arc.
+    this.emitNeonAttackTrail();
+    for (const trail of this.neonTrails) trail.life -= dt;
+    this.neonTrails = this.neonTrails.filter(trail => trail.life > 0);
 
     // particles
     for (const p of this.particles) {
@@ -3728,6 +4295,8 @@ class World {
     document.getElementById('special-val').textContent = specialPct >= 100
       ? (this.specialBuffTime > 0 ? 'CROWN' : 'READY')
       : Math.floor(specialPct) + '%';
+    const specialActionBtn = document.getElementById('btn-special-action');
+    if (specialActionBtn) specialActionBtn.classList.toggle('ready', specialPct >= 100);
     document.getElementById('score-val').textContent = this.score.toLocaleString();
     document.getElementById('wave-line').textContent = 'WAVE ' + this.wave;
     updateEmotionSignal();
@@ -3737,6 +4306,62 @@ class World {
       this.gameOverTriggered = true;
       onGameOver(this.score, this.wave - 1);
     }
+  }
+
+  recordGameplayEvent(id, detail = '') {
+    const stamp = id + (detail ? ` · ${detail}` : '');
+    this.gameplayEventLog.unshift(stamp);
+    this.gameplayEventLog.length = Math.min(6, this.gameplayEventLog.length);
+  }
+  spawnEventBarrelDrop() {
+    const x = 56 + RNG.random() * Math.max(80, W - 112);
+    const y = backY + 28 + RNG.random() * Math.max(40, groundY - backY - 56);
+    this.props.push(new Prop('barrel', x, y));
+    this.addFloat('BARREL DROP!', x, y - 58, this.mood.secondary_colors[0] || this.mood.primary_colors[0]);
+    this.spawnImpact(x, y - 10);
+    this.recordGameplayEvent('event.prop_barrel_drop');
+  }
+  triggerSpecialMeterSpark() {
+    const amount = 8 + Math.round(this.mood.affect.power * 8);
+    this.chargeSpecial(amount);
+    this.spawnSpecialRing(this.player.x, this.player.y, 52, this.mood.accent_colors[0], 0.70);
+    this.addFloat(`METER +${amount}`, this.player.x, this.player.y - 96, this.mood.accent_colors[0]);
+    this.recordGameplayEvent('event.special_meter_spark', `+${amount}`);
+  }
+  triggerMoodParticleSurge() {
+    this.spawnSparkleBurst();
+    this.flash(this.mood.primary_colors[0], 0.10);
+    this.addFloat('MOOD SURGE!', W / 2, backY + 28, this.mood.primary_colors[0]);
+    this.recordGameplayEvent('event.mood_particle_surge');
+  }
+  triggerEnemyPackShift() {
+    const before = this.enemies.filter(e => e.isAlive).length;
+    this.spawnEnemy();
+    const after = this.enemies.filter(e => e.isAlive).length;
+    if (after > before) this.addFloat('PACK SHIFT!', W / 2, backY + 54, this.mood.secondary_colors[0] || this.mood.primary_colors[0]);
+    this.recordGameplayEvent('event.enemy_pack_shift');
+  }
+  triggerMusicStingerEcho() {
+    Audio.sfxStreak();
+    this.addFloat('ECHO!', this.player.x, this.player.y - 110, this.mood.primary_colors[0]);
+    this.recordGameplayEvent('event.music_stinger_echo');
+  }
+  forceNextGameplayEvent() {
+    const ids = this.eventRng.ids();
+    if (!ids.length) return null;
+    const id = ids[this.qaForcedEventIndex % ids.length];
+    this.qaForcedEventIndex += 1;
+    return this.eventRng.force(id, {});
+  }
+  runMusicSurgeQA() {
+    if (!this.player) return;
+    this.player.hp = Math.max(1, Math.min(this.player.hp, this.player.maxHp * 0.24));
+    this.combatMetrics.hitStreak = Math.max(this.combatMetrics.hitStreak, 7);
+    this.combatMetrics.lastHitAt = performance.now();
+    this.combatMetrics.hitTimes.push(performance.now(), performance.now() - 90, performance.now() - 180, performance.now() - 270);
+    Audio.updateReactiveMusic({ intensity: 0.92, hpRatio: this.player.hp / this.player.maxHp, hitStreak: this.combatMetrics.hitStreak, moodId: this.currentMoodId });
+    this.addFloat('MUSIC SURGE', W / 2, H * 0.24, this.mood.primary_colors[0]);
+    this.recordGameplayEvent('qa.music_surge');
   }
 
   runAudioStressTest() {
@@ -3758,10 +4383,68 @@ class World {
     this.bossSpawned = false;
     this.waveCleared = false;
     this.waveTransition = 0;
+    this.levelAdvanceReady = false;
+    this.levelTransitionActive = false;
+    this.levelTransitionProgress = 0;
+    this.levelTransitionDistance = 0;
+    this.levelScrollOffset = 0;
+    this.levelTransitionPlayerAnchorY = null;
+    this.levelIncoming = { props: [], weapons: [] };
+    this.nextMoodId = null;
     this.syncRunMood(true);
     this.seedPropsForWave();
     this.spawnEliteEnemy();
     this.addFloat('CROWN TEST', W / 2, H * 0.24, this.mood.primary_colors[0]);
+  }
+
+  emitNeonAttackTrail() {
+    if (!this.player || this.player.state !== 'attack') return;
+    const hb = this.player.attackHitbox();
+    if (!hb) return;
+    const fromX = this.player.x + this.player.facing * 3;
+    const fromY = this.player.y - this.player.z - this.player.h * 0.58;
+    const toX = hb.x + hb.w / 2;
+    const toY = hb.y + hb.h / 2;
+    const accent = this.mood.accent_colors?.[0] || this.mood.primary_colors[0];
+    const secondary = this.mood.secondary_colors?.[0] || accent;
+    this.neonTrails.push({
+      x1: fromX, y1: fromY,
+      x2: toX, y2: toY,
+      bend: (RNG.random() - 0.5) * 18,
+      life: 0.20, maxLife: 0.20,
+      color: accent,
+      core: secondary,
+      width: this.player.attackType === 'kick' || this.player.attackType === 'jumpkick' ? 5 : 4,
+    });
+    if (this.neonTrails.length > 42) this.neonTrails.splice(0, this.neonTrails.length - 42);
+  }
+  drawNeonAttackTrails(g) {
+    for (const trail of this.neonTrails) {
+      const a = Math.max(0, trail.life / Math.max(0.001, trail.maxLife));
+      const mx = (trail.x1 + trail.x2) / 2;
+      const my = (trail.y1 + trail.y2) / 2 + trail.bend;
+      g.save();
+      g.globalAlpha = a * 0.88;
+      g.lineCap = 'round';
+      g.lineJoin = 'round';
+      g.shadowColor = trail.color;
+      g.shadowBlur = 18 * a;
+      g.strokeStyle = trail.color;
+      g.lineWidth = trail.width + 5 * a;
+      g.beginPath();
+      g.moveTo(trail.x1, trail.y1);
+      g.quadraticCurveTo(mx, my, trail.x2, trail.y2);
+      g.stroke();
+      g.shadowBlur = 0;
+      g.strokeStyle = trail.core;
+      g.lineWidth = Math.max(1.5, trail.width * 0.42);
+      g.globalAlpha = a;
+      g.beginPath();
+      g.moveTo(trail.x1, trail.y1);
+      g.quadraticCurveTo(mx, my, trail.x2, trail.y2);
+      g.stroke();
+      g.restore();
+    }
   }
 
   spawnImpact(x, y) {
@@ -3789,9 +4472,17 @@ class World {
     g.save();
     g.translate(sx, sy);
 
-    this.drawBackdrop(g, m);
-    this.drawGround(g, m);
-    this.drawEmotionOverlay(g, m);
+    if (this.levelTransitionActive) {
+      const p = Math.max(0, Math.min(1, this.levelTransitionProgress));
+      const eased = p * p * (3 - 2 * p);
+      const nextMood = getEmotionProfile(this.nextMoodId || this.moodIdForWave(this.wave + 1));
+      const oldOffset = eased * Math.min(H * 0.52, 360);
+      const incomingOffset = -Math.min(H * 0.34, 220) + eased * Math.min(H * 0.48, 320);
+      this.drawParallaxLevel(g, m, Math.max(0.10, 1 - eased * 0.94), oldOffset);
+      this.drawParallaxLevel(g, nextMood, eased, incomingOffset);
+    } else {
+      this.drawParallaxLevel(g, m, 1, 0);
+    }
 
     // Sparkles in background
     for (const s of this.sparkles) {
@@ -3845,10 +4536,23 @@ class World {
       g.globalAlpha = 1;
     }
 
-    // Props, weapons, and combatants share a depth sort so clutter reads cleanly.
-    const beings = [...this.props.filter(p => !p.dead), ...this.weapons.filter(w => !w.dead), this.player, ...this.enemies]
-      .slice().sort((a,b) => a.y - b.y);
+    // Props, weapons, incoming next-level objects, and combatants share a depth sort.
+    // During the upward advance, new level objects descend over the horizon while
+    // old scene objects drift down and out.
+    const incomingProps = this.levelTransitionActive ? (this.levelIncoming.props || []) : [];
+    const incomingWeapons = this.levelTransitionActive ? (this.levelIncoming.weapons || []) : [];
+    const beings = [
+      ...this.props.filter(p => !p.dead),
+      ...this.weapons.filter(w => !w.dead),
+      ...incomingProps.filter(p => !p.dead),
+      ...incomingWeapons.filter(w => !w.dead),
+      this.player,
+      ...this.enemies
+    ].slice().sort((a,b) => a.y - b.y);
     for (const b of beings) b.draw(g);
+
+    // Neon strike trails sit above fighters but below impact sparks.
+    this.drawNeonAttackTrails(g);
 
     // Impact particles
     for (const p of this.particles) {
@@ -3880,29 +4584,51 @@ class World {
       g.globalAlpha = 1;
     }
 
-    // Wave banner
-    if (this.waveCleared && this.waveTransition > 0) {
-      g.textAlign = 'center';
-      g.font = '700 28px "Bungee", system-ui';
-      g.fillStyle = 'rgba(0,0,0,0.8)';
-      g.fillRect(0, H/2 - 40, W, 80);
-      g.fillStyle = m.primary_colors[0];
-      g.fillText(`WAVE ${this.wave} CLEAR`, W/2, H/2);
-      g.font = '400 14px "VT323", system-ui';
-      g.fillStyle = m.secondary_colors[0] || '#fff';
+    // Upward level-advance banner: wave clear now asks the player to push north into the next level.
+    if (this.waveCleared) {
       const nextWave = this.wave + 1;
       const nextBanner = this.isCrownBossWave(nextWave)
         ? `${this.moodBannerForWave(nextWave)} · CROWN CLASH`
         : this.isEliteWave(nextWave)
           ? `${this.moodBannerForWave(nextWave)} · ELITE WAVE`
           : this.moodBannerForWave(nextWave);
-      g.fillText(`NEXT WAVE INCOMING · ${nextBanner}`, W/2, H/2 + 22);
+      g.save();
+      g.textAlign = 'center';
+      if (!this.levelTransitionActive) {
+        g.fillStyle = 'rgba(0,0,0,0.78)';
+        g.fillRect(0, H/2 - 56, W, 112);
+        g.font = '700 28px "Bungee", system-ui';
+        g.fillStyle = m.primary_colors[0];
+        g.fillText(`WAVE ${this.wave} CLEAR`, W/2, H/2 - 8);
+        g.font = '700 42px "Bungee", system-ui';
+        const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.08;
+        g.save(); g.translate(W/2, backY + 44); g.scale(pulse, pulse); g.fillText('↑', 0, 0); g.restore();
+        g.font = '400 16px "VT323", system-ui';
+        g.fillStyle = m.secondary_colors[0] || '#fff';
+        g.fillText(`MOVE UP · THE NEXT LEVEL SCROLLS IN · ${nextBanner}`, W/2, H/2 + 26);
+      } else {
+        const p = Math.max(0, Math.min(1, this.levelTransitionProgress));
+        g.fillStyle = 'rgba(0,0,0,0.52)';
+        g.fillRect(W * 0.17, H * 0.16, W * 0.66, 44);
+        g.font = '700 18px "Bungee", system-ui';
+        g.fillStyle = m.primary_colors[0];
+        g.fillText(`ASCENDING · ${Math.floor(p * 100)}%`, W/2, H * 0.16 + 28);
+      }
+      g.restore();
     }
   }
 
+  drawParallaxLevel(g, m, alpha = 1, offset = 0) {
+    g.save();
+    g.globalAlpha *= Math.max(0, Math.min(1, alpha));
+    g.save(); g.translate(0, offset * 0.42); this.drawBackdrop(g, m); g.restore();
+    g.save(); g.translate(0, offset); this.drawGround(g, m); g.restore();
+    g.save(); g.translate(0, offset * 0.74); this.drawEmotionOverlay(g, m); g.restore();
+    g.restore();
+  }
+
   drawEmotionOverlay(g, m) {
-    const profile = this.profile;
-    const overlay = profile.audiovisual.vfx_overlay;
+    const overlay = m.audiovisual?.vfx_overlay || this.profile.audiovisual.vfx_overlay;
     const t = performance.now() * (settings.reduceMotion ? 0.00018 : 0.00065);
     g.save();
     if (overlay === 'softMotes') {
@@ -4006,7 +4732,7 @@ class World {
     }
   }
   drawEmotionStageDetails(g, m) {
-    const moodId = this.currentMoodId || settings.previewMood || 'tense';
+    const moodId = m.mood_id || this.currentMoodId || settings.previewMood || 'tense';
     g.save();
     if (moodId === 'bright') {
       g.globalAlpha = 0.24;
@@ -4113,9 +4839,10 @@ function rectOverlap(a, b) {
 let lastT = 0;
 let running = false;
 let paused = false;
-function loop(t) {
-  if (!running) return;
-  const dt = Math.min(0.04, (t - lastT) / 1000);
+let loopGeneration = 0;
+function loop(t, generation = loopGeneration) {
+  if (!running || generation !== loopGeneration) return;
+  const dt = Math.min(0.04, Math.max(0, (t - lastT) / 1000));
   lastT = t;
   if (!paused && game) {
     game.update(dt);
@@ -4125,11 +4852,13 @@ function loop(t) {
     ctx.restore();
   }
   updateQALab(dt);
-  requestAnimationFrame(loop);
+  requestAnimationFrame((nextT) => loop(nextT, generation));
 }
 
 function startGame() {
   resize();
+  loopGeneration += 1;
+  const generation = loopGeneration;
   game = new World();
   game.start();
   running = true;
@@ -4139,7 +4868,7 @@ function startGame() {
   document.getElementById('icon-stack').classList.remove('hidden');
   document.getElementById('touch-controls').classList.remove('hidden');
   updateEmotionSignal();
-  requestAnimationFrame(loop);
+  requestAnimationFrame((nextT) => loop(nextT, generation));
 }
 
 function onGameOver(score, waves) {
@@ -4195,6 +4924,8 @@ function updateQALab(dt = 0) {
   set('qa-enemies', game ? String(game.enemies.filter(e => e.isAlive).length) : '—');
   set('qa-props', game ? String(game.props.filter(p => !p.dead).length + game.weapons.filter(w => !w.dead).length) : '—');
   set('qa-features', features || '—');
+  set('qa-reconcile', react?.lastReconcileReason || '—');
+  set('qa-event', game?.gameplayEventLog?.[0] || '—');
 }
 
 /* ---------- UI WIRING ---------- */
@@ -4400,6 +5131,8 @@ function init() {
     document.getElementById('qa-bottler')?.addEventListener('click', () => game?.spawnEnemy('trickster'));
     document.getElementById('qa-crown')?.addEventListener('click', () => game?.forceCrownClash());
     document.getElementById('qa-flash')?.addEventListener('click', () => { if (game) { game.flash(game.mood.accent_colors[0], 0.22); game.spawnSparkleBurst(); game.shake(8); } });
+    document.getElementById('qa-force-event')?.addEventListener('click', () => game?.forceNextGameplayEvent());
+    document.getElementById('qa-music-surge')?.addEventListener('click', () => game?.runMusicSurgeQA());
   }
   updateEmotionSignal();
 
