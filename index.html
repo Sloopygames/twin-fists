@@ -728,7 +728,7 @@
     <div class="modal">
       <div class="title-art">
         <h1>TWIN FISTS</h1>
-        <div class="sub">— A STREET BRAWLER · V16 —</div>
+        <div class="sub">— A STREET BRAWLER · V18 —</div>
       </div>
       <p style="margin-bottom: var(--s-2); line-height: 1.6;">
         The city's gone sideways. Thugs in the alley, neon humming overhead. You've got two fists, two feet, and one shot to clear the block.
@@ -2123,6 +2123,7 @@ function bindDpadBtn(btn) {
 function bindActionBtn(btn) {
   const act = btn.dataset.act;
   let pointerId = null;
+
   const press = (e) => {
     if (e?.pointerType === 'mouse' && e.button !== undefined && e.button !== 0) return;
     e?.preventDefault?.();
@@ -2130,10 +2131,12 @@ function bindActionBtn(btn) {
       pointerId = e.pointerId;
       try { btn.setPointerCapture(pointerId); } catch (_) {}
     }
+    // Action buttons, including Jump, trigger on press.
     setBtn(act, true);
     btn.classList.add('pressed');
     haptic(12);
   };
+
   const release = (e) => {
     if (e?.pointerId != null && pointerId != null && e.pointerId !== pointerId) return;
     e?.preventDefault?.();
@@ -2190,17 +2193,25 @@ function bindAnalogPad(pad) {
     e.preventDefault();
     updateFromEvent(e);
   };
-  const end = (e) => {
+  const end = (e, shouldJump = false) => {
     if (pointerId !== null && e.pointerId !== pointerId) return;
     e.preventDefault();
+    const hadActiveStick = input.analogActive;
     pointerId = null;
     clearAnalogMovement();
+
+    // Releasing the movement stick triggers a jump, while cancellation does not.
+    if (hadActiveStick && shouldJump) {
+      setBtn('jump', true);
+      setBtn('jump', false);
+      haptic(10);
+    }
   };
   pad.addEventListener('pointerdown', start, { passive: false });
   pad.addEventListener('pointermove', move, { passive: false });
-  pad.addEventListener('pointerup', end, { passive: false });
-  pad.addEventListener('pointercancel', end, { passive: false });
-  pad.addEventListener('lostpointercapture', end, { passive: false });
+  pad.addEventListener('pointerup', (e) => end(e, true), { passive: false });
+  pad.addEventListener('pointercancel', (e) => end(e, false), { passive: false });
+  pad.addEventListener('lostpointercapture', (e) => end(e, false), { passive: false });
 }
 bindAnalogPad(document.getElementById('analog-pad'));
 document.querySelectorAll('.act-btn').forEach(bindActionBtn);
