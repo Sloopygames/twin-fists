@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-<title>Twin Fists V59 — Throw Cinema & Glitch Layer</title>
+<title>Twin Fists V60 — Glitch Director & Audio Polish</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -1195,7 +1195,7 @@
   </div>
 
   <div id="qa-lab" class="qa-lab hidden" aria-live="polite">
-    <div class="qa-title">QA LAB · V59</div>
+    <div class="qa-title">QA LAB · V60</div>
     <div class="qa-metrics">
       <span>FPS <strong id="qa-fps">—</strong></span>
       <span>MOOD <strong id="qa-mood">—</strong></span>
@@ -1225,7 +1225,7 @@
     <div class="modal">
       <div class="title-art">
         <h1>TWIN FISTS</h1>
-        <div class="sub">— A STREET BRAWLER · V59 —</div>
+        <div class="sub">— A STREET BRAWLER · V60 —</div>
       </div>
       <p style="margin-bottom: var(--s-2); line-height: 1.6;">
         The city's gone sideways. Thugs in the alley, neon humming overhead. You've got two fists, two feet, and one shot to clear the block.
@@ -1246,7 +1246,7 @@
   <!-- Settings modal -->
   <div class="modal-bg hidden" id="settings-modal">
     <div class="modal">
-      <h2 id="debug-unlock-tap" tabindex="0" role="button" aria-label="Settings hidden debug unlock target">SETTINGS <span class="settings-version">V59</span></h2>
+      <h2 id="debug-unlock-tap" tabindex="0" role="button" aria-label="Settings hidden debug unlock target">SETTINGS <span class="settings-version">V60</span></h2>
 
       <div class="setting-row">
         <label>EMOTIONAL FEEL <span class="val" id="mood-name">—</span></label>
@@ -2922,6 +2922,105 @@ const Audio = {
     }).connect(this.sfxBus);
     beep.triggerAttackRelease('A5', '8n');
     setTimeout(() => beep.dispose(), 460);
+  },
+  sfxGlitchTapeStopRestart() {
+    if (!this.ready) return;
+    const stop = new Tone.Synth({
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.002, decay: 0.22, sustain: 0.02, release: 0.10 },
+      volume: -21,
+    }).connect(this.sfxBus);
+    stop.triggerAttackRelease('A4', '8n');
+    stop.frequency.rampTo('A2', 0.20);
+    const restart = new Tone.Synth({
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.002, decay: 0.14, sustain: 0.01, release: 0.08 },
+      volume: -23,
+    }).connect(this.sfxBus);
+    setTimeout(() => {
+      try {
+        restart.triggerAttackRelease('A2', '16n');
+        restart.frequency.rampTo('A4', 0.12);
+      } catch (_) {}
+    }, 190);
+    setTimeout(() => { stop.dispose(); restart.dispose(); }, 640);
+  },
+  sfxGlitchBitcrushSweep() {
+    if (!this.ready) return;
+    const sweep = new Tone.Synth({
+      oscillator: { type: 'sawtooth' },
+      envelope: { attack: 0.001, decay: 0.24, sustain: 0.02, release: 0.10 },
+      volume: -24,
+    }).connect(this.sfxBus);
+    const fizz = new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.06 },
+      volume: -25,
+    }).connect(this.sfxBus);
+    sweep.triggerAttackRelease('E6', '8n');
+    sweep.frequency.rampTo('B2', 0.24);
+    fizz.triggerAttackRelease('16n', '+0.02');
+    setTimeout(() => { sweep.dispose(); fizz.dispose(); }, 520);
+  },
+  sfxGlitchDegaussHum() {
+    if (!this.ready) return;
+    const hum = new Tone.FMSynth({
+      harmonicity: 0.65,
+      modulationIndex: 4.2,
+      envelope: { attack: 0.01, decay: 0.28, sustain: 0.02, release: 0.12 },
+      modulationEnvelope: { attack: 0.01, decay: 0.22, sustain: 0.01, release: 0.08 },
+      volume: -25,
+    }).connect(this.sfxBus);
+    hum.triggerAttackRelease('C2', '8n');
+    hum.frequency.rampTo('G2', 0.28);
+    setTimeout(() => hum.dispose(), 620);
+  },
+  sfxGlitchSpeakerPop() {
+    if (!this.ready) return;
+    const pop = new Tone.MembraneSynth({
+      pitchDecay: 0.008,
+      octaves: 1.4,
+      envelope: { attack: 0.001, decay: 0.09, sustain: 0, release: 0.05 },
+      volume: -16,
+    }).connect(this.sfxBus);
+    const click = new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.02 },
+      volume: -22,
+    }).connect(this.sfxBus);
+    pop.triggerAttackRelease('G2', '32n');
+    click.triggerAttackRelease('64n', '+0.004');
+    setTimeout(() => { pop.dispose(); click.dispose(); }, 260);
+  },
+  sfxGlitchPacketLoss() {
+    if (!this.ready) return;
+    const tick = new Tone.Synth({
+      oscillator: { type: 'square' },
+      envelope: { attack: 0.001, decay: 0.034, sustain: 0, release: 0.02 },
+      volume: -25,
+    }).connect(this.sfxBus);
+    const notes = ['C6', 'A5', 'E6', 'B5', 'F6', 'D6'];
+    notes.forEach((note, i) => {
+      if (i === 2) return; // intentional missing packet
+      setTimeout(() => {
+        try { tick.triggerAttackRelease(note, '128n'); } catch (_) {}
+      }, i * 26);
+    });
+    setTimeout(() => tick.dispose(), 300);
+  },
+  sfxGlitchRelayClick() {
+    if (!this.ready) return;
+    const relay = new Tone.MetalSynth({
+      frequency: 180,
+      envelope: { attack: 0.001, decay: 0.10, release: 0.06 },
+      harmonicity: 3.1,
+      modulationIndex: 9,
+      resonance: 1200,
+      octaves: 0.8,
+      volume: -28,
+    }).connect(this.sfxBus);
+    relay.triggerAttackRelease('64n');
+    setTimeout(() => relay.dispose(), 260);
   },
 
   sfxSpecial(moodId = 'tense') {
@@ -8231,13 +8330,32 @@ class ScreenGlitchLayer {
     this.effects.push(effect);
     this.effects = this.effects.slice(-10);
 
-    if (type === 'glass') this.triggerGlassImpact(effect.x, effect.y, effect.severity);
+    if (type === 'glass') {
+      this.triggerGlassImpact(effect.x, effect.y, effect.severity);
+      Audio.sfxGlitchSpeakerPop();
+    }
     if (type === 'static') Audio.sfxGlitchStatic();
-    if (type === 'colorbars') Audio.sfxGlitchTestTone();
-    if (type === 'vcr') Audio.sfxGlitchRecordSkip();
-    if (type === 'jpeg' || type === 'digital' || type === 'binary') Audio.sfxGlitchBaudBurst();
-    if (type === 'blue') Audio.sfxGlitchDialTone();
-    if (type === 'filmBurn' || type === 'cigarette') Audio.sfxGlitchStatic();
+    if (type === 'colorbars') {
+      Audio.sfxGlitchTestTone();
+      Audio.sfxGlitchDegaussHum();
+    }
+    if (type === 'vcr') {
+      Audio.sfxGlitchRecordSkip();
+      Audio.sfxGlitchTapeStopRestart();
+    }
+    if (type === 'jpeg') Audio.sfxGlitchBitcrushSweep();
+    if (type === 'digital' || type === 'binary') {
+      Audio.sfxGlitchBaudBurst();
+      Audio.sfxGlitchPacketLoss();
+    }
+    if (type === 'blue') {
+      Audio.sfxGlitchDialTone();
+      Audio.sfxGlitchRelayClick();
+    }
+    if (type === 'filmBurn' || type === 'cigarette') {
+      Audio.sfxGlitchStatic();
+      Audio.sfxGlitchSpeakerPop();
+    }
     return effect;
   }
 
@@ -8453,6 +8571,101 @@ class ScreenGlitchLayer {
   }
 }
 
+class GlitchDirector {
+  constructor(world) {
+    this.world = world;
+    this.enabled = true;
+    this.nextAmbientCheckAt = 0;
+    this.lastDirectedAt = -Infinity;
+    this.cooldownMs = 3400;
+    this.lastReason = null;
+  }
+
+  canTrigger(cooldownScale = 1) {
+    const now = performance.now();
+    return this.enabled && now - this.lastDirectedAt >= this.cooldownMs * cooldownScale;
+  }
+
+  mark(reason) {
+    this.lastReason = reason;
+    this.lastDirectedAt = performance.now();
+  }
+
+  chooseMoodEffect(moodId = 'tense', reason = 'combat') {
+    const pools = {
+      bright: reason === 'special' ? ['colorbars', 'filmBurn', 'static'] : ['colorbars', 'static'],
+      calm: reason === 'special' ? ['cigarette', 'static'] : ['static'],
+      mysterious: ['digital', 'binary', 'jpeg'],
+      tense: ['vcr', 'static', 'jpeg'],
+      triumphant: ['filmBurn', 'colorbars', 'digital'],
+    };
+    const pool = pools[moodId] || pools.tense;
+    return pool[Math.floor(RNG.random() * pool.length)];
+  }
+
+  directedTrigger(reason, effectType, opts = {}) {
+    if (!this.canTrigger(opts.cooldownScale ?? 1)) return false;
+    this.world.overlayFx?.trigger(effectType, opts);
+    this.mark(reason);
+    this.world.recordGameplayEvent?.('director.glitch', `${reason}:${effectType}`);
+    return true;
+  }
+
+  onSpecialUse({ moodId = 'tense', affected = 0, family = 'blast', flipped = false } = {}) {
+    const forceScore = Math.min(1, affected / 4 + (flipped ? 0.18 : 0) + (family === 'blast' ? 0.08 : 0));
+    const chance = 0.10 + forceScore * 0.18;
+    if (RNG.random() >= chance) return false;
+    return this.directedTrigger('special', this.chooseMoodEffect(moodId, 'special'), {
+      severity: 0.34 + forceScore * 0.30,
+      cooldownScale: 0.92,
+    });
+  }
+
+  onStoredCharge({ moodId = 'tense', charges = 1 } = {}) {
+    const chance = charges >= 3 ? 0.24 : 0.10 + charges * 0.04;
+    if (RNG.random() >= chance) return false;
+    const type = moodId === 'mysterious' ? 'binary' : (moodId === 'triumphant' ? 'filmBurn' : 'static');
+    return this.directedTrigger('stored-charge', type, {
+      severity: 0.24 + charges * 0.08,
+      cooldownScale: 0.80,
+    });
+  }
+
+  onGroundSpikeImpact({ finalImpact = false } = {}) {
+    if (!finalImpact || RNG.random() >= 0.20) return false;
+    return this.directedTrigger('ground-spike', RNG.random() < 0.55 ? 'vcr' : 'jpeg', {
+      severity: 0.34,
+      cooldownScale: 0.88,
+    });
+  }
+
+  update(dt, reactiveIntensity = 0) {
+    const now = performance.now();
+    if (!this.enabled || now < this.nextAmbientCheckAt) return;
+    this.nextAmbientCheckAt = now + 2400 + RNG.random() * 1800;
+    const metrics = this.world.combatMetrics || { hitStreak: 0, hitTimes: [] };
+    const recentHitRate = Math.min(1, (metrics.hitTimes?.length || 0) / 6);
+    const streakPressure = Math.min(1, (metrics.hitStreak || 0) / 8);
+    const intensity = Math.max(reactiveIntensity || 0, recentHitRate * 0.52 + streakPressure * 0.48);
+    if (intensity < 0.64) return;
+    const chance = 0.04 + (intensity - 0.64) * 0.22;
+    if (RNG.random() >= chance) return;
+    const moodId = this.world.currentMoodId || settings.previewMood || 'tense';
+    this.directedTrigger('combat-intensity', this.chooseMoodEffect(moodId, 'combat'), {
+      severity: 0.24 + intensity * 0.22,
+      cooldownScale: 1.0,
+    });
+  }
+
+  debugPulse(type = null) {
+    const moodId = this.world.currentMoodId || settings.previewMood || 'tense';
+    const effect = type || this.chooseMoodEffect(moodId, 'special');
+    this.world.overlayFx?.trigger(effect, { severity: 0.58 });
+    this.mark(`debug:${effect}`);
+    return effect;
+  }
+}
+
 class World {
   constructor() {
     this.player = null;
@@ -8517,6 +8730,7 @@ class World {
     this.levelIncoming = { props: [], weapons: [] };
     this.nextMoodId = null;
     this.overlayFx = new ScreenGlitchLayer();
+    this.glitchDirector = new GlitchDirector(this);
     this.cameraThrowEffects = [];
     this.lastThrowVariant = null;
 
@@ -9403,6 +9617,7 @@ class World {
       this.recordSuccessfulPlayerHit(0.48, 'throw');
       this.chargeSpecial(18, 'ground-spike');
     }
+    this.glitchDirector?.onGroundSpikeImpact({ finalImpact, entity });
   }
 
   debugForceThrowVariant(kind = 'groundSpike') {
@@ -9473,6 +9688,7 @@ class World {
     this.spawnStoredChargeWorldEffect(moodId, this.specialCharges);
     playStoredSpecialChargeHudEffect(moodId, this.specialCharges);
     Audio.sfxStoredSpecial(moodId, this.specialCharges);
+    this.glitchDirector?.onStoredCharge({ moodId, charges: this.specialCharges });
     if (previousCharges === 0) Audio.sfxPickup();
   }
 
@@ -9794,6 +10010,12 @@ class World {
 
     const altMark = familyRoll.flipped ? ' ↔' : '';
     this.addFloat(`${result.label}${altMark}`, this.player.x, this.player.y - 132, this.mood.primary_colors[0]);
+    this.glitchDirector?.onSpecialUse({
+      moodId,
+      affected: result.affected,
+      family: familyRoll.chosen,
+      flipped: familyRoll.flipped,
+    });
     if (result.affected > 0) this.combatMetrics.hitTimes.push(performance.now());
     return true;
   }
@@ -10719,6 +10941,9 @@ class World {
       hitStreak: this.combatMetrics.hitStreak,
       moodId: this.currentMoodId,
     });
+    // Intentional cinematic glitch direction is tied to authored combat intensity,
+    // never to real frame drops, device slowdown, or accidental browser audio failure.
+    this.glitchDirector?.update(dt, reactiveIntensity);
     this.updateActionCamera(dt, reactiveIntensity);
 
     // Update HUD
@@ -12438,6 +12663,13 @@ const DEBUG_ACTION_GROUPS = [
       { id: 'glitch-digital', label: 'Green Digital Glitch', run: world => world.overlayFx.trigger('digital', { severity: 0.62 }) },
       { id: 'glitch-binary', label: 'Binary / Hex Flash', run: world => world.overlayFx.trigger('binary', { severity: 0.52 }) },
       { id: 'glitch-blue', label: 'Blue Screen Gag', run: world => world.overlayFx.trigger('blue', { severity: 0.48 }) },
+      { id: 'director-pulse', label: 'Director Glitch Pulse', run: world => world.glitchDirector.debugPulse() },
+      { id: 'audio-tape-stop', label: 'Audio: Tape Stop', run: world => Audio.sfxGlitchTapeStopRestart() },
+      { id: 'audio-bitcrush', label: 'Audio: Bitcrush Sweep', run: world => Audio.sfxGlitchBitcrushSweep() },
+      { id: 'audio-degauss', label: 'Audio: CRT Degauss', run: world => Audio.sfxGlitchDegaussHum() },
+      { id: 'audio-speaker-pop', label: 'Audio: Speaker Pop', run: world => Audio.sfxGlitchSpeakerPop() },
+      { id: 'audio-packet-loss', label: 'Audio: Packet Loss', run: world => Audio.sfxGlitchPacketLoss() },
+      { id: 'audio-relay-click', label: 'Audio: Relay Click', run: world => Audio.sfxGlitchRelayClick() },
     ],
   },
 ];
