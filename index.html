@@ -728,7 +728,7 @@
     <div class="modal">
       <div class="title-art">
         <h1>TWIN FISTS</h1>
-        <div class="sub">— A STREET BRAWLER · V15 —</div>
+        <div class="sub">— A STREET BRAWLER · V16 —</div>
       </div>
       <p style="margin-bottom: var(--s-2); line-height: 1.6;">
         The city's gone sideways. Thugs in the alley, neon humming overhead. You've got two fists, two feet, and one shot to clear the block.
@@ -2122,14 +2122,39 @@ function bindDpadBtn(btn) {
 }
 function bindActionBtn(btn) {
   const act = btn.dataset.act;
-  const press = (e) => { e.preventDefault(); setBtn(act, true); btn.classList.add('pressed'); haptic(12); };
-  const release = (e) => { if(e) e.preventDefault(); setBtn(act, false); btn.classList.remove('pressed'); };
-  btn.addEventListener('touchstart', press, { passive: false });
-  btn.addEventListener('touchend', release, { passive: false });
-  btn.addEventListener('touchcancel', release, { passive: false });
-  btn.addEventListener('mousedown', press);
-  btn.addEventListener('mouseup', release);
-  btn.addEventListener('mouseleave', release);
+  let pointerId = null;
+  const press = (e) => {
+    if (e?.pointerType === 'mouse' && e.button !== undefined && e.button !== 0) return;
+    e?.preventDefault?.();
+    if (e?.pointerId != null) {
+      pointerId = e.pointerId;
+      try { btn.setPointerCapture(pointerId); } catch (_) {}
+    }
+    setBtn(act, true);
+    btn.classList.add('pressed');
+    haptic(12);
+  };
+  const release = (e) => {
+    if (e?.pointerId != null && pointerId != null && e.pointerId !== pointerId) return;
+    e?.preventDefault?.();
+    pointerId = null;
+    setBtn(act, false);
+    btn.classList.remove('pressed');
+  };
+
+  if (window.PointerEvent) {
+    btn.addEventListener('pointerdown', press, { passive: false });
+    btn.addEventListener('pointerup', release, { passive: false });
+    btn.addEventListener('pointercancel', release, { passive: false });
+    btn.addEventListener('lostpointercapture', release, { passive: false });
+  } else {
+    btn.addEventListener('touchstart', press, { passive: false });
+    btn.addEventListener('touchend', release, { passive: false });
+    btn.addEventListener('touchcancel', release, { passive: false });
+    btn.addEventListener('mousedown', press);
+    btn.addEventListener('mouseup', release);
+    btn.addEventListener('mouseleave', release);
+  }
 }
 function bindAnalogPad(pad) {
   if (!pad) return;
@@ -3582,7 +3607,7 @@ class World {
     if (!this.player?.isAlive || this.specialMeter < 100) return false;
     if (this.player.heldProp || this.player.grabbedEnemy || this.player.grabbedBy || this.player.isThrown) return false;
 
-    const moodId = m.mood_id || this.currentMoodId || settings.previewMood || 'tense';
+    const moodId = this.currentMoodId || settings.previewMood || 'tense';
     const x0 = this.player.x;
     const y0 = this.player.y;
     let effectLabel = 'SPECIAL!';
