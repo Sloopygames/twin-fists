@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-<title>Twin Fists V12 — Final Fidelity & Validation Pass</title>
+<title>Twin Fists V34 — Radial Patterns & Special Yells</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -84,12 +84,24 @@
     position: absolute;
     top: var(--safe-top); left: var(--safe-left); right: var(--safe-right);
     padding: var(--s-1) var(--s-2);
-    display: flex; justify-content: space-between; align-items: flex-start;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--s-1);
     z-index: 10;
     font-family: 'VT323', monospace;
     pointer-events: none;
   }
 
+  .hud-left-cluster,
+  .hud-right-cluster {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-1);
+    pointer-events: none;
+  }
+  .hud-right-cluster { align-items: flex-end; }
   .hud-block { pointer-events: auto; }
 
   .hp-wrap {
@@ -124,26 +136,178 @@
     gap: 0.618rem;
   }
   .special-bar {
+    position: relative;
     width: 9.5rem; height: 0.5rem;
     background: rgba(0,0,0,0.72);
     border: 1px solid var(--c-ui);
     margin-top: 2px;
-    overflow: hidden;
+    overflow: visible;
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
   }
   .special-fill {
+    position: relative;
     height: 100%; width: 0%;
+    overflow: hidden;
     background: linear-gradient(90deg, var(--c-secondary), var(--c-accent), var(--c-primary));
-    transition: width 0.18s cubic-bezier(.2,.8,.2,1);
+    transition: width 0.06s linear;
+  }
+  .special-fill::after {
+    content: "";
+    position: absolute;
+    top: -40%;
+    left: -35%;
+    width: 34%;
+    height: 180%;
+    opacity: 0;
+    transform: skewX(-22deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.92), transparent);
+  }
+  .special-bar.heart-charging,
+  .special-bar.meter-mid,
+  .special-bar.meter-high,
+  .special-bar.meter-ready {
+    border-color: var(--c-accent);
+  }
+  .special-bar.heart-charging {
+    box-shadow: 0 0 8px var(--c-accent), 0 0 16px color-mix(in srgb, var(--c-primary) 70%, transparent);
+  }
+  .special-bar.meter-mid {
+    box-shadow: 0 0 6px color-mix(in srgb, var(--c-secondary) 72%, transparent);
+  }
+  .special-bar.meter-high {
+    box-shadow: 0 0 9px var(--c-accent), 0 0 18px color-mix(in srgb, var(--c-primary) 58%, transparent);
+  }
+  .special-bar.meter-ready {
+    box-shadow: 0 0 12px var(--c-accent), 0 0 24px var(--c-primary);
+  }
+  .special-bar.has-bank {
+    box-shadow:
+      0 0 8px var(--c-accent),
+      0 0 18px color-mix(in srgb, var(--c-primary) 58%, transparent);
+  }
+  .special-bar.heart-charging .special-fill::after,
+  .special-bar.meter-high .special-fill::after,
+  .special-bar.meter-ready .special-fill::after {
+    opacity: 0.85;
+    animation: specialSweep 0.78s linear infinite;
   }
   .special-fill.ready {
     animation: specialPulse 0.65s ease-in-out infinite alternate;
+  }
+  .special-meter-fx {
+    position: absolute;
+    inset: -0.55rem -0.35rem;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 2;
+  }
+  .special-meter-spark {
+    position: absolute;
+    width: 0.28rem;
+    height: 0.28rem;
+    margin-left: -0.14rem;
+    margin-top: -0.14rem;
+    border-radius: 50%;
+    background: var(--spark-color, var(--c-accent));
+    box-shadow:
+      0 0 6px var(--spark-color, var(--c-accent)),
+      0 0 12px color-mix(in srgb, var(--spark-color, var(--c-accent)) 72%, transparent);
+    animation: specialHudSpark 0.72s ease-out forwards;
+  }
+  .special-meter-fx.burst {
+    filter: brightness(1.35);
+  }
+  .special-meter-fx.charge-complete::before {
+    content: attr(data-charge-symbol);
+    position: absolute;
+    left: 50%;
+    top: -1.54rem;
+    transform: translateX(-50%);
+    font-size: 1.12rem;
+    line-height: 1;
+    color: var(--c-accent);
+    text-shadow: 0 0 10px var(--c-accent), 0 0 18px var(--c-primary);
+    animation: specialMeterChargeGlyph 0.92s ease-out forwards;
+  }
+  .special-meter-fx.charge-complete::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-left: -0.6rem;
+    margin-top: -0.6rem;
+    border-radius: 50%;
+    border: 2px solid var(--c-accent);
+    box-shadow: 0 0 12px var(--c-accent), 0 0 20px var(--c-primary);
+    animation: specialMeterChargeHalo 0.82s ease-out forwards;
+  }
+  .special-charge-counter {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    z-index: 4;
+    min-width: 1.8rem;
+    padding: 0 0.24rem;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.76);
+    border: 1px solid var(--c-ui);
+    color: var(--c-ui);
+    font-family: 'Bungee', sans-serif;
+    font-size: 0.58rem;
+    line-height: 0.95rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+    text-shadow: 1px 1px 0 var(--c-contrast);
+    box-shadow: 0 0 8px rgba(0,0,0,0.45);
+    pointer-events: none;
+  }
+  .special-charge-counter.pulse {
+    animation: storedChargeCounterPop 0.58s ease-out;
+  }
+  @keyframes storedChargeCounterPop {
+    0% { transform: translate(-50%, -50%) scale(0.72); filter: brightness(1); }
+    35% { transform: translate(-50%, -50%) scale(1.28); filter: brightness(1.75); }
+    100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
   }
   @keyframes specialPulse {
     from { filter: brightness(1); }
     to { filter: brightness(1.55); }
   }
+  @keyframes specialSweep {
+    from { transform: translateX(0) skewX(-22deg); }
+    to { transform: translateX(430%) skewX(-22deg); }
+  }
+  @keyframes specialHudSpark {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0.55);
+    }
+    18% {
+      opacity: 1;
+      transform: translate(0, -0.08rem) scale(1.1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--spark-x, 0.16rem), var(--spark-y, -0.7rem)) scale(0.18);
+    }
+  }
+  @keyframes specialMeterChargeGlyph {
+    0% { opacity: 0; transform: translateX(-50%) translateY(0.4rem) scale(0.66); }
+    20% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.22); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-1.1rem) scale(0.82); }
+  }
+  @keyframes specialMeterChargeHalo {
+    0% { opacity: 0; transform: scale(0.34); }
+    22% { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 0; transform: scale(2.9); }
+  }
 
   .score-stack {
+    position: relative;
+    min-width: 5.35rem;
     text-align: right;
     background: rgba(0,0,0,0.55);
     border: 2px solid var(--c-secondary);
@@ -156,11 +320,12 @@
 
   /* Top-right icon stack */
   .icon-stack {
-    position: absolute;
-    top: calc(var(--safe-top) + var(--s-1));
-    right: calc(var(--safe-right) + var(--s-2));
-    display: flex; gap: var(--s-1);
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--s-1);
     z-index: 11;
+    pointer-events: auto;
   }
   .icon-btn {
     width: 2.618rem; height: 2.618rem;
@@ -176,6 +341,63 @@
   }
   .icon-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 0 var(--c-contrast); }
   .icon-btn:disabled { opacity: 0.35; cursor: default; }
+
+
+  @media (orientation: portrait) {
+    /* Top row: left player-status cluster, right utility + score column. */
+    .icon-stack {
+      top: calc(var(--safe-top) + 0.55rem);
+      right: calc(var(--safe-right) + 0.64rem);
+      gap: 0.38rem;
+    }
+    .icon-btn {
+      width: 2.26rem;
+      height: 2.26rem;
+      font-size: 1.16rem;
+    }
+    .score-stack {
+      top: calc(var(--safe-top) + 3.02rem);
+      right: 0.64rem;
+      min-width: 4.62rem;
+      padding-left: 0.40rem;
+      padding-right: 0.40rem;
+    }
+    .score-label { font-size: 0.82rem; }
+    .score-val { font-size: 1.14rem; }
+    .wave-line { font-size: 0.72rem; }
+
+    /* Dedicated second HUD row: Mood/Arc sits clearly below meters and score. */
+    .emotion-signal {
+      top: calc(var(--safe-top) + 7.55rem);
+      width: calc(100vw - 1.18rem);
+      max-width: calc(100vw - 1.18rem);
+      min-height: 2.72rem;
+      padding: 0.34rem 0.50rem 0.30rem;
+      z-index: 12;
+    }
+    .emotion-main {
+      max-width: 100%;
+      gap: 0.34rem;
+      font-size: 0.96rem;
+      line-height: 1;
+    }
+    .emotion-arc {
+      max-width: calc(100vw - 1.95rem);
+      font-size: 0.72rem;
+      line-height: 0.94;
+    }
+
+    /* Keep the left status block compact so the mood row has dedicated space. */
+    .hp-wrap {
+      padding: 0.30rem 0.44rem;
+      max-width: calc(100vw - 6.9rem);
+    }
+    .hp-bar,
+    .special-bar {
+      width: min(8.9rem, calc(100vw - 9.2rem));
+      min-width: 7.15rem;
+    }
+  }
 
   /* Touch controls */
   #touch-controls {
@@ -275,6 +497,8 @@
 
   .action-pad {
     pointer-events: auto;
+    touch-action: none;
+    user-select: none;
     width: 12.0rem;
     height: 12.0rem;
     display: grid;
@@ -285,6 +509,7 @@
     position: relative;
   }
   .act-btn {
+    position: relative;
     width: 4.236rem; height: 4.236rem;
     border-radius: 50%;
     background: rgba(0,0,0,0.55);
@@ -308,7 +533,181 @@
     color: var(--c-accent);
     filter: brightness(1.25);
   }
+  .act-btn.special.bank-ready {
+    box-shadow:
+      0 0 12px var(--c-accent),
+      0 0 22px color-mix(in srgb, var(--c-primary) 68%, transparent),
+      4px 4px 0 0 var(--c-contrast);
+  }
+  .act-btn.special.charge-complete {
+    animation: specialButtonChargePop 0.78s ease-out;
+  }
+  .act-btn.special.charge-complete::after {
+    content: attr(data-charge-symbol);
+    position: absolute;
+    left: 50%;
+    top: -1.25rem;
+    transform: translateX(-50%);
+    font-size: 1.08rem;
+    line-height: 1;
+    color: var(--c-accent);
+    text-shadow: 0 0 10px var(--c-accent), 0 0 18px var(--c-primary);
+    animation: specialButtonSymbolLift 0.78s ease-out forwards;
+    pointer-events: none;
+  }
+  .special-button-count {
+    position: absolute;
+    right: -0.24rem;
+    bottom: -0.28rem;
+    min-width: 1.12rem;
+    height: 1.12rem;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--c-ui);
+    background: rgba(0,0,0,0.82);
+    color: var(--c-ui);
+    font-family: 'VT323', monospace;
+    font-size: 0.86rem;
+    letter-spacing: 0.03em;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--c-accent) 60%, transparent);
+    pointer-events: none;
+  }
+  .special-button-spark {
+    position: absolute;
+    width: 0.24rem;
+    height: 0.24rem;
+    border-radius: 50%;
+    background: var(--c-accent);
+    box-shadow: 0 0 8px var(--c-accent), 0 0 16px var(--c-primary);
+    pointer-events: none;
+    animation: specialButtonSparkDrift 0.72s ease-out forwards;
+  }
+  @keyframes specialButtonChargePop {
+    0% { transform: scale(1); filter: brightness(1); }
+    35% { transform: scale(1.12); filter: brightness(1.72); }
+    100% { transform: scale(1); filter: brightness(1.25); }
+  }
+  @keyframes specialButtonSymbolLift {
+    0% { opacity: 0; transform: translateX(-50%) translateY(0.3rem) scale(0.72); }
+    22% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.18); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-1.25rem) scale(0.84); }
+  }
+  @keyframes specialButtonSparkDrift {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.55); }
+    20% { opacity: 1; transform: translate(0, -0.1rem) scale(1.12); }
+    100% { opacity: 0; transform: translate(var(--spark-x, 0.4rem), var(--spark-y, -0.8rem)) scale(0.18); }
+  }
   .act-btn.pressed { transform: translate(2px,2px) scale(0.95); box-shadow: 2px 2px 0 0 var(--c-contrast); }
+
+  .action-heart {
+    grid-column: 2;
+    grid-row: 2;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    cursor: pointer;
+    width: 3.36rem;
+    height: 3.36rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    position: relative;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    transform: scale(var(--heart-scale, 1)) rotate(var(--heart-rock, 0deg));
+    transform-origin: 50% 58%;
+    transition: transform 0.055s linear, filter 0.10s linear;
+    filter: brightness(calc(1 + var(--heart-brightness, 0)));
+  }
+  .action-heart::before {
+    content: none;
+  }
+  .action-heart-flutter-layer {
+    position: absolute;
+    inset: -1.45rem;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .action-heart-glyph {
+    display: inline-block;
+    transform-origin: 50% 62%;
+    font-size: 2.34rem;
+    line-height: 1;
+    color: #ff3b52;
+    text-shadow:
+      0 0 8px rgba(255, 59, 82, 0.92),
+      0 0 18px rgba(255, 59, 82, 0.82),
+      0 0 28px rgba(255, 123, 143, 0.48);
+    transform: scale(var(--heart-glyph-scale, 1)) rotate(var(--heart-glyph-tilt, 0deg));
+    transition: transform 0.055s linear, text-shadow 0.10s linear, filter 0.10s linear;
+  }
+  .action-heart-glyph.beat-lub {
+    animation: heartLubBeat 0.20s cubic-bezier(.16,.84,.27,1);
+  }
+  .action-heart-glyph.beat-dub {
+    animation: heartDubBeat 0.16s cubic-bezier(.16,.84,.27,1);
+  }
+  .action-heart.held .action-heart-glyph {
+    text-shadow:
+      0 0 10px rgba(255, 59, 82, 1),
+      0 0 22px rgba(255, 59, 82, 0.92),
+      0 0 34px rgba(255, 123, 143, 0.62);
+    filter: brightness(1.16);
+  }
+  .flutter-heart {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    line-height: 1;
+    font-size: var(--flutter-size, 1rem);
+    color: var(--flutter-color, #ff3b52);
+    text-shadow:
+      0 0 8px var(--flutter-color, #ff3b52),
+      0 0 18px color-mix(in srgb, var(--flutter-color, #ff3b52) 75%, transparent);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    animation: heartFlutterUp var(--flutter-dur, 1.2s) ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes heartLubBeat {
+    0%   { transform: scale(var(--heart-glyph-scale, 1)) rotate(0deg); }
+    24%  { transform: scale(calc(var(--heart-glyph-scale, 1) * 1.38)) rotate(-8deg); }
+    60%  { transform: scale(calc(var(--heart-glyph-scale, 1) * 1.09)) rotate(5deg); }
+    100% { transform: scale(var(--heart-glyph-scale, 1)) rotate(0deg); }
+  }
+  @keyframes heartDubBeat {
+    0%   { transform: scale(var(--heart-glyph-scale, 1)) rotate(0deg); }
+    30%  { transform: scale(calc(var(--heart-glyph-scale, 1) * 1.20)) rotate(5deg); }
+    72%  { transform: scale(calc(var(--heart-glyph-scale, 1) * 1.03)) rotate(-2deg); }
+    100% { transform: scale(var(--heart-glyph-scale, 1)) rotate(0deg); }
+  }
+  @keyframes heartFlutterUp {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -36%) rotate(var(--rot-0, -8deg)) scale(0.68);
+    }
+    10% {
+      opacity: 1;
+    }
+    28% {
+      transform: translate(calc(-50% + var(--x-1, 0.22rem)), calc(-50% - 0.84rem))
+                 rotate(var(--rot-1, 8deg)) scale(1.10);
+    }
+    54% {
+      transform: translate(calc(-50% + var(--x-2, -0.16rem)), calc(-50% - 1.70rem))
+                 rotate(var(--rot-2, -7deg)) scale(1.00);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(calc(-50% + var(--x-3, 0.10rem)), calc(-50% - 3.30rem))
+                 rotate(var(--rot-3, 10deg)) scale(0.78);
+    }
+  }
 
   /* Modal overlay */
   .modal-bg {
@@ -446,23 +845,6 @@
   }
   .setting-select:focus { border-color: var(--c-primary); }
 
-  #run-meta-badge {
-    position: absolute;
-    left: calc(var(--safe-left) + var(--s-2));
-    bottom: calc(var(--safe-bottom) + 9.6rem);
-    z-index: 12;
-    max-width: min(72vw, 18rem);
-    padding: 0.382rem 0.618rem;
-    background: rgba(0,0,0,0.55);
-    border: 1px solid rgba(255,255,255,0.32);
-    color: var(--c-ui);
-    font-family: 'VT323', monospace;
-    font-size: 0.95rem;
-    letter-spacing: 0.06em;
-    pointer-events: none;
-    box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
-  }
-
   .modal-btn {
     width: 100%;
     padding: var(--s-1) var(--s-2);
@@ -535,6 +917,7 @@
   @media (orientation: landscape) and (max-height: 500px) {
     .act-btn { width: 3.5rem; height: 3.5rem; }
     .act-btn.jump { width: 2.8rem; height: 2.8rem; }
+    .action-heart { width: 2.88rem; height: 2.88rem; font-size: 1.82rem; }
     .analog-pad { width: 6.4rem; height: 6.4rem; }
     .analog-knob { width: 2.618rem; height: 2.618rem; margin-left: -1.309rem; margin-top: -1.309rem; }
   }
@@ -548,9 +931,10 @@
     transform: translateX(-50%);
     z-index: 12;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.382rem 0.618rem;
+    gap: 0.12rem;
+    padding: 0.35rem 0.68rem 0.30rem;
     background: rgba(0,0,0,0.62);
     border: 2px solid var(--c-primary);
     box-shadow: 3px 3px 0 0 var(--c-contrast);
@@ -560,11 +944,22 @@
     pointer-events: none;
     white-space: nowrap;
   }
+  .emotion-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
   .emotion-signal .glyph { font-size: 1.3rem; }
   .emotion-signal .mode { color: var(--c-primary); }
-
-  .run-meta-badge {
-    top: calc(var(--safe-top) + 3.35rem) !important;
+  .emotion-arc {
+    max-width: min(46vw, 18rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    color: var(--c-secondary);
+    line-height: 0.95;
   }
 
   /* QA Lab is debug-only: open with ?debug=1 or ?qa=1. */
@@ -624,8 +1019,7 @@
   body.contrast-aid .hp-wrap,
   body.contrast-aid .score-stack,
   body.contrast-aid .emotion-signal,
-  body.contrast-aid .run-meta-badge,
-  body.contrast-aid .qa-lab {
+    body.contrast-aid .qa-lab {
     background: rgba(0,0,0,0.92);
     border-width: 3px;
     text-shadow: 0 0 2px #000, 1px 1px 0 #000;
@@ -635,7 +1029,7 @@
   body.contrast-aid .hp-label,
   body.contrast-aid .special-label,
   body.contrast-aid .emotion-signal,
-  body.contrast-aid .run-meta-badge {
+  body.contrast-aid .emotion-arc {
     text-shadow: 0 0 2px #000, 1px 1px 0 #000, -1px -1px 0 #000;
   }
   body.contrast-aid .hp-bar,
@@ -651,36 +1045,42 @@
 
   <!-- HUD -->
   <div id="hud" class="hidden">
-    <div class="hud-block hp-wrap">
-      <div class="hp-label">HEALTH</div>
-      <div class="hp-bar"><div class="hp-fill" id="hp-fill"></div></div>
-      <div class="special-wrap">
-        <div class="special-label"><span>SPECIAL</span><span id="special-val">0%</span></div>
-        <div class="special-bar"><div class="special-fill" id="special-fill"></div></div>
+    <div class="hud-left-cluster">
+      <div class="hud-block hp-wrap">
+        <div class="hp-label">HEALTH</div>
+        <div class="hp-bar"><div class="hp-fill" id="hp-fill"></div></div>
+        <div class="special-wrap">
+          <div class="special-label"><span>SPECIAL</span><span id="special-val">0%</span></div>
+          <div class="special-bar" id="special-bar">
+            <div class="special-fill" id="special-fill"></div>
+            <div class="special-meter-fx" id="special-meter-fx" aria-hidden="true"></div>
+            <div class="special-charge-counter hidden" id="special-charge-counter" aria-hidden="true">×0</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="hud-block score-stack">
-      <div class="score-label">SCORE</div>
-      <div class="score-val" id="score-val">0</div>
-      <div class="wave-line" id="wave-line">WAVE 1</div>
+
+    <div class="hud-right-cluster" id="hud-right-cluster">
+      <div class="icon-stack hidden" id="icon-stack">
+        <button class="icon-btn" id="btn-fullscreen" aria-label="Fullscreen">⛶</button>
+        <button class="icon-btn" id="btn-settings" aria-label="Settings">⚙</button>
+      </div>
+      <div class="hud-block score-stack">
+        <div class="score-label">SCORE</div>
+        <div class="score-val" id="score-val">0</div>
+        <div class="wave-line" id="wave-line">WAVE 1</div>
+      </div>
     </div>
   </div>
 
   <div id="emotion-signal" class="emotion-signal hidden" aria-live="polite">
-    <span class="glyph" id="emotion-signal-glyph">⚠</span>
-    <span class="mode">MOOD</span>
-    <span id="emotion-signal-label">TENSE</span>
+    <div class="emotion-main">
+      <span class="glyph" id="emotion-signal-glyph">⚠</span>
+      <span class="mode">MOOD</span>
+      <span id="emotion-signal-label">TENSE</span>
+    </div>
+    <div class="emotion-arc" id="emotion-arc-label">ARC · FIRST NIGHT OUT</div>
   </div>
-
-  <!-- Icon stack (top-right, separate from HUD score) -->
-  <div class="icon-stack hidden" id="icon-stack">
-    <button class="icon-btn" id="btn-fullscreen" aria-label="Fullscreen">⛶</button>
-    <button class="icon-btn" id="btn-settings" aria-label="Settings">⚙</button>
-  </div>
-
-
-  <!-- Run identity badge: arc route + optional deterministic seed -->
-  <div id="run-meta-badge" class="hidden">ARC · FIRST NIGHT OUT</div>
 
   <!-- Touch controls -->
   <div id="touch-controls" class="hidden">
@@ -693,13 +1093,17 @@
     <div class="action-pad" aria-label="Action buttons">
       <button class="act-btn jump" data-act="jump" aria-label="Jump">JUMP</button>
       <button class="act-btn punch" data-act="punch" aria-label="Punch">PUNCH</button>
+      <div class="action-heart" id="action-heart" aria-hidden="true">
+        <span class="action-heart-flutter-layer" id="action-heart-flutter"></span>
+        <span class="action-heart-glyph" id="action-heart-glyph">♥</span>
+      </div>
       <button class="act-btn kick" data-act="kick" aria-label="Kick">KICK</button>
-      <button class="act-btn special" id="btn-special-action" data-act="special" aria-label="Special attack">SPECIAL</button>
+      <button class="act-btn special" id="btn-special-action" data-act="special" aria-label="Special attack">SPECIAL<span class="special-button-count hidden" id="special-button-count">×0</span></button>
     </div>
   </div>
 
   <div id="qa-lab" class="qa-lab hidden" aria-live="polite">
-    <div class="qa-title">QA LAB · V12</div>
+    <div class="qa-title">QA LAB · V34</div>
     <div class="qa-metrics">
       <span>FPS <strong id="qa-fps">—</strong></span>
       <span>MOOD <strong id="qa-mood">—</strong></span>
@@ -728,7 +1132,7 @@
     <div class="modal">
       <div class="title-art">
         <h1>TWIN FISTS</h1>
-        <div class="sub">— A STREET BRAWLER · V18 —</div>
+        <div class="sub">— A STREET BRAWLER · V34 —</div>
       </div>
       <p style="margin-bottom: var(--s-2); line-height: 1.6;">
         The city's gone sideways. Thugs in the alley, neon humming overhead. You've got two fists, two feet, and one shot to clear the block.
@@ -737,7 +1141,7 @@
         <strong>Controls:</strong><br>
         D-PAD to move &middot; PUNCH / KICK to brawl &middot; JUMP for kicks from above<br>
         PUNCH near props to pick up / throw. PUNCH near stunned enemies to grab / launch. KICK drops held props.<br>
-        When SPECIAL is full, press PUNCH + KICK together to unleash the current emotion's power.<br>Kick while carrying a pipe to throw it. Follow the up-arrow after wave clear to advance levels.<br>V11 expands bounded gameplay events, completes the reactive-music director layer, and exposes richer QA inspection for final validation.<br>
+        When SPECIAL is full, press PUNCH + KICK together to unleash the current emotion's power.<br>Kick while carrying a pipe to throw it. Follow the up-arrow after wave clear to advance levels.<br>V26 banks multiple SPECIAL charges, adds mood-shaped charge effects, groups the HUD more cleanly, and uses a restrained action camera during combat.<br>
         <em style="opacity:0.7;">Desktop: arrows / WASD, J=punch/use, K=kick/drop/throw pipe, L=special, J+K=special, space=jump</em>
       </p>
       <button class="modal-btn" id="btn-start">ENTER THE STREETS</button>
@@ -755,7 +1159,7 @@
         <label>EMOTIONAL FEEL <span class="val" id="mood-name">—</span></label>
         <div class="mood-grid" id="mood-grid"></div>
         <p class="small-print" style="text-align:left; margin-top:0.618rem;">
-          Runs follow an authored emotional arc across waves. This selection sets the preview palette and becomes the locked run mood only when Practice Mood is enabled. V11 completes the event ecology and music-director fidelity work while preserving Crown Clash, weapons, juggle windows, and QA instrumentation.
+          Runs follow an authored emotional arc across waves. This selection sets the preview palette and becomes the locked run mood only when Practice Mood is enabled. V26 preserves the event and music-director layers while adding banked SPECIAL charges, emotion-shaped completion effects, and dynamic combat framing.
         </p>
       </div>
 
@@ -927,6 +1331,84 @@ const MOODS = {
 
 
 const MOOD_ORDER = ['bright', 'calm', 'mysterious', 'tense', 'triumphant'];
+
+const HEARTBEAT_PROFILES = {
+  calm: {
+    bpm: 62,
+    doubleGapMs: 164,
+    lubMs: 13,
+    dubMs: 8,
+    pulseScale: 0.115,
+    glow: 14,
+    ring: 0.26,
+    chargeRate: 18.0,
+    label: 'RESTING'
+  },
+  bright: {
+    bpm: 88,
+    doubleGapMs: 132,
+    lubMs: 12,
+    dubMs: 8,
+    pulseScale: 0.145,
+    glow: 18,
+    ring: 0.34,
+    chargeRate: 22.0,
+    label: 'UPBEAT'
+  },
+  mysterious: {
+    bpm: 72,
+    doubleGapMs: 176,
+    lubMs: 11,
+    dubMs: 7,
+    pulseScale: 0.128,
+    glow: 17,
+    ring: 0.31,
+    chargeRate: 20.0,
+    label: 'HUSHED'
+  },
+  tense: {
+    bpm: 112,
+    doubleGapMs: 108,
+    lubMs: 15,
+    dubMs: 9,
+    pulseScale: 0.180,
+    glow: 24,
+    ring: 0.42,
+    chargeRate: 28.0,
+    label: 'RACING'
+  },
+  triumphant: {
+    bpm: 98,
+    doubleGapMs: 122,
+    lubMs: 16,
+    dubMs: 10,
+    pulseScale: 0.185,
+    glow: 26,
+    ring: 0.46,
+    chargeRate: 25.0,
+    label: 'FULL'
+  },
+};
+
+function heartbeatProfileForMood(moodId) {
+  return HEARTBEAT_PROFILES[moodId] || HEARTBEAT_PROFILES.bright;
+}
+
+function heartbeatMix(a, b, t) {
+  const clamped = Math.max(0, Math.min(1, t || 0));
+  const mix = (key) => a[key] + (b[key] - a[key]) * clamped;
+  return {
+    bpm: mix('bpm'),
+    doubleGapMs: mix('doubleGapMs'),
+    lubMs: mix('lubMs'),
+    dubMs: mix('dubMs'),
+    pulseScale: mix('pulseScale'),
+    glow: mix('glow'),
+    ring: mix('ring'),
+    chargeRate: mix('chargeRate'),
+    label: clamped < 0.5 ? a.label : b.label,
+  };
+}
 
 /* ---------- DETERMINISTIC RNG + VARIANT SETS ---------- */
 const nativeRandom = Math.random.bind(Math);
@@ -1950,6 +2432,85 @@ const Audio = {
     noise.triggerAttackRelease('8n');
     setTimeout(() => noise.dispose(), 320);
   },
+  sfxChargeSpark(moodId = 'tense', intensity = 0.25, milestone = false) {
+    if (!this.ready) return;
+    const amount = Math.max(0, Math.min(1, intensity || 0));
+    const notePools = {
+      bright: ['E5', 'G5', 'C6'],
+      calm: ['C5', 'E5', 'A5'],
+      mysterious: ['D5', 'F5', 'A5'],
+      tense: ['E5', 'G5', 'B5'],
+      triumphant: ['G5', 'B5', 'D6'],
+    };
+    const pool = notePools[moodId] || notePools.tense;
+    const note = pool[Math.floor(RNG.random() * pool.length)];
+    const synth = new Tone.Synth({
+      oscillator: { type: moodId === 'tense' ? 'sawtooth' : (moodId === 'calm' ? 'sine' : 'triangle') },
+      envelope: {
+        attack: 0.002,
+        decay: 0.06 + amount * 0.08,
+        sustain: 0.03 + amount * 0.05,
+        release: 0.12 + amount * 0.18,
+      },
+      volume: milestone ? -13 : (-22 + amount * 6),
+    }).connect(this.sfxBus);
+    synth.triggerAttackRelease(note, milestone ? '16n' : '32n');
+    if (milestone) {
+      setTimeout(() => {
+        try { synth.triggerAttackRelease(pool[(pool.indexOf(note) + 1) % pool.length], '32n'); } catch (_) {}
+      }, 72);
+    }
+    setTimeout(() => synth.dispose(), milestone ? 520 : 340);
+  },
+
+  sfxStoredSpecial(moodId = 'tense', charges = 1) {
+    if (!this.ready) return;
+    const noteSets = {
+      bright: ['C5', 'E5', 'G5', 'C6'],
+      calm: ['A4', 'C5', 'E5', 'A5'],
+      mysterious: ['D4', 'F4', 'A4', 'D5'],
+      tense: ['E4', 'G4', 'B4', 'E5'],
+      triumphant: ['G4', 'B4', 'D5', 'G5'],
+    };
+    const notes = noteSets[moodId] || noteSets.tense;
+    const volume = -15 + Math.min(4, charges);
+    const chord = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: moodId === 'tense' ? 'sawtooth' : (moodId === 'calm' ? 'sine' : 'triangle') },
+      envelope: { attack: 0.006, decay: 0.20, sustain: 0.08, release: 0.42 },
+      volume,
+    }).connect(this.sfxBus);
+    chord.triggerAttackRelease(notes.slice(0, 3), '8n');
+    setTimeout(() => {
+      try { chord.triggerAttackRelease(notes.slice(1, 4), '16n'); } catch (_) {}
+    }, 88);
+    setTimeout(() => chord.dispose(), 820);
+  },
+
+  sfxActionZoom(moodId = 'tense', intensity = 0.5) {
+    if (!this.ready) return;
+    const amount = Math.max(0, Math.min(1, intensity || 0));
+    const noteByMood = {
+      bright: 'G5',
+      calm: 'E5',
+      mysterious: 'D5',
+      tense: 'B4',
+      triumphant: 'D6',
+    };
+    const synth = new Tone.Synth({
+      oscillator: { type: moodId === 'tense' ? 'sawtooth' : (moodId === 'calm' ? 'sine' : 'triangle') },
+      envelope: {
+        attack: 0.004,
+        decay: 0.08 + amount * 0.10,
+        sustain: 0.02 + amount * 0.03,
+        release: 0.16 + amount * 0.22,
+      },
+      volume: -24 + amount * 4,
+    }).connect(this.sfxBus);
+    const note = noteByMood[moodId] || noteByMood.tense;
+    synth.triggerAttackRelease(note, amount > 0.72 ? '16n' : '32n');
+    setTimeout(() => synth.dispose(), 420);
+  },
+
   sfxSpecial(moodId = 'tense') {
     if (!this.ready) return;
     const rootByMood = {
@@ -1966,6 +2527,7 @@ const Audio = {
       volume: -10,
     }).connect(this.sfxBus);
     chord.triggerAttackRelease(notes, '4n');
+
     const zap = new Tone.Synth({
       oscillator: { type: moodId === 'tense' ? 'sawtooth' : 'square' },
       envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.2 },
@@ -1973,7 +2535,63 @@ const Audio = {
     }).connect(this.sfxBus);
     zap.triggerAttackRelease(notes[notes.length - 1], '8n');
     zap.frequency.rampTo(Tone.Frequency(notes[0]).transpose(-12).toNote(), 0.22);
-    setTimeout(() => { chord.dispose(); zap.dispose(); }, 900);
+
+    const yellChance = 0.72;
+    const voiceNodes = [];
+    if (Math.random() < yellChance) {
+      const roll = Math.random();
+      if (roll < 0.28) {
+        const yell = new Tone.Synth({
+          oscillator: { type: 'sawtooth' },
+          envelope: { attack: 0.002, decay: 0.13, sustain: 0.02, release: 0.12 },
+          volume: -9,
+        }).connect(this.sfxBus);
+        yell.triggerAttackRelease('A5', '16n');
+        yell.frequency.rampTo('E5', 0.08);
+        voiceNodes.push(yell);
+      } else if (roll < 0.56) {
+        const hiss = new Tone.NoiseSynth({
+          noise: { type: 'white' },
+          envelope: { attack: 0.001, decay: 0.09, sustain: 0, release: 0.05 },
+          volume: -16,
+        }).connect(this.sfxBus);
+        const snap = new Tone.Synth({
+          oscillator: { type: 'triangle' },
+          envelope: { attack: 0.001, decay: 0.09, sustain: 0, release: 0.08 },
+          volume: -12,
+        }).connect(this.sfxBus);
+        hiss.triggerAttackRelease('32n');
+        snap.triggerAttackRelease('G5', '32n', '+0.03');
+        voiceNodes.push(hiss, snap);
+      } else if (roll < 0.80) {
+        const kiai = new Tone.MonoSynth({
+          oscillator: { type: 'square' },
+          envelope: { attack: 0.002, decay: 0.18, sustain: 0.03, release: 0.12 },
+          filterEnvelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.06, baseFrequency: 320, octaves: 1.4 },
+          volume: -10,
+        }).connect(this.sfxBus);
+        kiai.triggerAttackRelease('D5', '16n');
+        kiai.frequency.rampTo('A4', 0.09);
+        voiceNodes.push(kiai);
+      } else {
+        const shout = new Tone.Synth({
+          oscillator: { type: 'pulse', width: 0.35 },
+          envelope: { attack: 0.001, decay: 0.08, sustain: 0.01, release: 0.07 },
+          volume: -11,
+        }).connect(this.sfxBus);
+        shout.triggerAttackRelease('E5', '32n');
+        shout.triggerAttackRelease('G5', '32n', '+0.05');
+        voiceNodes.push(shout);
+      }
+    }
+
+    setTimeout(() => {
+      chord.dispose();
+      zap.dispose();
+      for (const node of voiceNodes) {
+        try { node.dispose(); } catch (_) {}
+      }
+    }, 900);
   },
 };
 
@@ -2061,11 +2679,135 @@ function resize() {
   canvas.style.width = W + 'px';
   canvas.style.height = H + 'px';
   ctx.imageSmoothingEnabled = false;
-  // Playable zone: leave room for HUD + touch controls
-  groundY = H - 130;
-  backY  = H * 0.45;
-  if (groundY < 200) groundY = H - 90;
+  // Playable zone: portrait preserves thumb-control reserve; landscape gets a
+  // deeper lane so the player can walk farther down-screen.
+  const landscapePlayfield = W >= H;
+  groundY = landscapePlayfield ? H - 54 : H - 130;
+  backY  = landscapePlayfield ? H * 0.34 : H * 0.45;
+  if (!landscapePlayfield && groundY < 200) groundY = H - 90;
+  if (landscapePlayfield && groundY < 210) groundY = H - 38;
+  if (game?.camera) {
+    const zoom = Math.max(0.25, game.camera.zoom || getPlayfieldZoom());
+    const clamped = clampCameraCenter(game.camera.x || W * 0.5, game.camera.y || H * 0.5, zoom);
+    game.camera.x = clamped.x;
+    game.camera.y = clamped.y;
+    game.camera.targetX = clamped.x;
+    game.camera.targetY = clamped.y;
+    game.camera.targetZoom = getPlayfieldZoom() + (game.actionZoomTarget || 0);
+  }
 }
+
+function getPlayfieldZoom() {
+  // V30: idle/search framing returns to the wider V28 levels so enemies farther
+  // away can be found during lulls. Action zoom supplies the V29 close-up feel.
+  return W >= H ? 1.52 : 1.76;
+}
+
+function getHitZoomBonusCap() {
+  // Preserve V29's strong peak framing as the action state:
+  // landscape max ≈ 2.56, portrait max ≈ 3.16.
+  return W >= H ? 1.04 : 1.40;
+}
+
+function getCameraScreenAnchor() {
+  const portrait = H > W;
+  return {
+    x: W * 0.5,
+    // Portrait keeps the camera eye-line above the thumb-control band.
+    y: H * (portrait ? 0.62 : 0.56),
+  };
+}
+
+function getHardPlayBounds() {
+  return {
+    left: 20,
+    right: Math.max(20, W - 20),
+    top: backY + 10,
+    bottom: groundY,
+  };
+}
+
+function clampCameraCenter(x, y, zoom = getPlayfieldZoom(), anchor = getCameraScreenAnchor()) {
+  const z = Math.max(0.25, zoom || getPlayfieldZoom());
+  const minX = anchor.x / z;
+  const maxX = W - (W - anchor.x) / z;
+  const minY = anchor.y / z;
+  const maxY = H - (H - anchor.y) / z;
+  const safeMinX = Math.min(minX, maxX);
+  const safeMaxX = Math.max(minX, maxX);
+  const safeMinY = Math.min(minY, maxY);
+  const safeMaxY = Math.max(minY, maxY);
+  return {
+    x: Math.max(safeMinX, Math.min(safeMaxX, x)),
+    y: Math.max(safeMinY, Math.min(safeMaxY, y)),
+  };
+}
+
+function ensurePlayerVisibleInCamera(player, cameraX, cameraY, zoom, anchor = getCameraScreenAnchor()) {
+  if (!player) return { x: cameraX, y: cameraY, zoom };
+  const portrait = H > W;
+  const margins = {
+    left: portrait ? 30 : 26,
+    right: portrait ? 30 : 26,
+    top: portrait ? 88 : 42,
+    bottom: portrait ? 168 : 50,
+  };
+  const minZoom = Math.max(1.18, getPlayfieldZoom() * 0.86);
+  let cx = cameraX;
+  let cy = cameraY;
+  let z = Math.max(minZoom, zoom || getPlayfieldZoom());
+
+  const playerBox = () => ({
+    left: player.x - Math.max(18, (player.w || 32) * 0.62),
+    right: player.x + Math.max(18, (player.w || 32) * 0.62),
+    top: player.y - (player.z || 0) - Math.max(64, (player.h || 72) * 1.08) - 18,
+    bottom: player.y + 18,
+  });
+
+  const screenBox = (box) => ({
+    left: anchor.x + (box.left - cx) * z,
+    right: anchor.x + (box.right - cx) * z,
+    top: anchor.y + (box.top - cy) * z,
+    bottom: anchor.y + (box.bottom - cy) * z,
+  });
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const box = playerBox();
+    let screen = screenBox(box);
+
+    if (screen.left < margins.left) cx = box.left - (margins.left - anchor.x) / z;
+    if (screen.right > W - margins.right) cx = box.right - ((W - margins.right) - anchor.x) / z;
+    if (screen.top < margins.top) cy = box.top - (margins.top - anchor.y) / z;
+    if (screen.bottom > H - margins.bottom) cy = box.bottom - ((H - margins.bottom) - anchor.y) / z;
+
+    const clamped = clampCameraCenter(cx, cy, z, anchor);
+    cx = clamped.x;
+    cy = clamped.y;
+    screen = screenBox(box);
+
+    const stillClipped =
+      screen.left < margins.left ||
+      screen.right > W - margins.right ||
+      screen.top < margins.top ||
+      screen.bottom > H - margins.bottom;
+
+    if (!stillClipped) break;
+    if (z <= minZoom + 0.002) break;
+    z = Math.max(minZoom, z * 0.94);
+  }
+
+  return { x: cx, y: cy, zoom: z };
+}
+
+const READABILITY_SCALE = {
+  player: 1.16,
+  enemy: 1.12,
+  boss: 1.08,
+  prop: 1.12,
+  weaponPickup: 1.16,
+  pickup: 1.18,
+};
+
 window.addEventListener('resize', resize);
 
 /* ---------- INPUT ---------- */
@@ -2120,43 +2862,106 @@ function bindDpadBtn(btn) {
   btn.addEventListener('mouseup', release);
   btn.addEventListener('mouseleave', release);
 }
-function bindActionBtn(btn) {
+function activateActionButton(btn, active, triggerHaptic = false) {
+  if (!btn) return;
   const act = btn.dataset.act;
-  let pointerId = null;
+  setBtn(act, active);
+  btn.classList.toggle('pressed', active);
+  if (active && triggerHaptic) haptic(12);
+}
 
-  const press = (e) => {
-    if (e?.pointerType === 'mouse' && e.button !== undefined && e.button !== 0) return;
-    e?.preventDefault?.();
-    if (e?.pointerId != null) {
-      pointerId = e.pointerId;
-      try { btn.setPointerCapture(pointerId); } catch (_) {}
+function actionButtonAtPoint(pad, clientX, clientY) {
+  const buttons = [...pad.querySelectorAll('.act-btn')];
+  let directHit = null;
+  let nearest = null;
+  let nearestDist = Infinity;
+
+  for (const btn of buttons) {
+    const rect = btn.getBoundingClientRect();
+    const inside = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+    if (inside) {
+      directHit = btn;
+      break;
     }
-    // Action buttons, including Jump, trigger on press.
-    setBtn(act, true);
-    btn.classList.add('pressed');
-    haptic(12);
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dist = Math.hypot(clientX - cx, clientY - cy);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearest = btn;
+    }
+  }
+
+  // Permit normal thumb drift and swipe-through activation, but do not trigger
+  // actions when the finger is far from every button.
+  return directHit || (nearestDist <= 44 ? nearest : null);
+}
+
+function bindActionPadDrag(pad) {
+  if (!pad) return;
+  let pointerId = null;
+  let activeBtn = null;
+
+  const switchActiveButton = (nextBtn) => {
+    if (nextBtn === activeBtn) return;
+    if (activeBtn) activateActionButton(activeBtn, false, false);
+    activeBtn = nextBtn;
+    if (activeBtn) activateActionButton(activeBtn, true, true);
   };
 
-  const release = (e) => {
-    if (e?.pointerId != null && pointerId != null && e.pointerId !== pointerId) return;
-    e?.preventDefault?.();
+  const start = (e) => {
+    if (e?.pointerType === 'mouse' && e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    pointerId = e.pointerId ?? null;
+    try { pad.setPointerCapture(pointerId); } catch (_) {}
+    switchActiveButton(actionButtonAtPoint(pad, e.clientX, e.clientY));
+  };
+
+  const move = (e) => {
+    if (pointerId !== null && e.pointerId !== pointerId) return;
+    e.preventDefault();
+    switchActiveButton(actionButtonAtPoint(pad, e.clientX, e.clientY));
+  };
+
+  const end = (e) => {
+    if (pointerId !== null && e.pointerId !== pointerId) return;
+    e.preventDefault();
     pointerId = null;
-    setBtn(act, false);
-    btn.classList.remove('pressed');
+    switchActiveButton(null);
   };
 
   if (window.PointerEvent) {
-    btn.addEventListener('pointerdown', press, { passive: false });
-    btn.addEventListener('pointerup', release, { passive: false });
-    btn.addEventListener('pointercancel', release, { passive: false });
-    btn.addEventListener('lostpointercapture', release, { passive: false });
+    pad.addEventListener('pointerdown', start, { passive: false });
+    pad.addEventListener('pointermove', move, { passive: false });
+    pad.addEventListener('pointerup', end, { passive: false });
+    pad.addEventListener('pointercancel', end, { passive: false });
+    pad.addEventListener('lostpointercapture', end, { passive: false });
   } else {
-    btn.addEventListener('touchstart', press, { passive: false });
-    btn.addEventListener('touchend', release, { passive: false });
-    btn.addEventListener('touchcancel', release, { passive: false });
-    btn.addEventListener('mousedown', press);
-    btn.addEventListener('mouseup', release);
-    btn.addEventListener('mouseleave', release);
+    const touchStart = (e) => {
+      const touch = e.touches?.[0];
+      if (!touch) return;
+      e.preventDefault();
+      pointerId = touch.identifier;
+      switchActiveButton(actionButtonAtPoint(pad, touch.clientX, touch.clientY));
+    };
+    const touchMove = (e) => {
+      const touch = [...(e.touches || [])].find(t => t.identifier === pointerId);
+      if (!touch) return;
+      e.preventDefault();
+      switchActiveButton(actionButtonAtPoint(pad, touch.clientX, touch.clientY));
+    };
+    const touchEnd = (e) => {
+      e.preventDefault();
+      pointerId = null;
+      switchActiveButton(null);
+    };
+    pad.addEventListener('touchstart', touchStart, { passive: false });
+    pad.addEventListener('touchmove', touchMove, { passive: false });
+    pad.addEventListener('touchend', touchEnd, { passive: false });
+    pad.addEventListener('touchcancel', touchEnd, { passive: false });
+    pad.addEventListener('mousedown', start);
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
   }
 }
 function bindAnalogPad(pad) {
@@ -2214,7 +3019,8 @@ function bindAnalogPad(pad) {
   pad.addEventListener('lostpointercapture', (e) => end(e, false), { passive: false });
 }
 bindAnalogPad(document.getElementById('analog-pad'));
-document.querySelectorAll('.act-btn').forEach(bindActionBtn);
+bindActionPadDrag(document.querySelector('.action-pad'));
+bindActionHeartHold();
 
 // Keyboard for desktop
 window.addEventListener('keydown', (e) => {
@@ -2248,6 +3054,154 @@ function haptic(ms) {
   if (navigator.vibrate) { try { navigator.vibrate(ms); } catch(e){} }
 }
 
+function hapticPattern(pattern) {
+  if (!settings.haptics) return;
+  if (!navigator.vibrate) return;
+  try { navigator.vibrate(pattern); } catch(e) {}
+}
+
+function expoChance(probability, lambda = 1.0) {
+  const p = Math.max(0, Math.min(1, probability || 0));
+  const eff = 1 - Math.exp(-Math.max(0.01, lambda) * p);
+  return RNG.random() < eff;
+}
+
+function normalRandom(mean = 0, stdDev = 1) {
+  let u = 0, v = 0;
+  while (u === 0) u = RNG.random();
+  while (v === 0) v = RNG.random();
+  const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  return mean + z * stdDev;
+}
+
+const HEART_FLUTTER_COLORS = ['#ff3b52', '#ff5f74', '#ff8397'];
+
+function heartFlutterColor(rare = false) {
+  if (rare) return HEART_FLUTTER_COLORS[Math.floor(RNG.random() * HEART_FLUTTER_COLORS.length)];
+  return HEART_FLUTTER_COLORS[Math.floor(RNG.random() * HEART_FLUTTER_COLORS.length)];
+}
+
+function spawnHeartFlutterFromButton(intensity = 0.5, rare = false) {
+  const layer = document.getElementById('action-heart-flutter');
+  if (!layer) return;
+  const count = rare ? 2 : 1;
+  for (let i = 0; i < count; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'flutter-heart';
+    heart.textContent = rare && RNG.random() < 0.45 ? '❣' : '♥';
+    const size = 0.98 + intensity * 0.70 + RNG.random() * 0.28 + (rare ? 0.18 : 0);
+    const hueColor = heartFlutterColor(rare);
+    heart.style.setProperty('--flutter-size', `${size.toFixed(2)}rem`);
+    heart.style.setProperty('--flutter-color', hueColor);
+    heart.style.setProperty('--flutter-dur', `${(1.08 + RNG.random() * 0.42 + intensity * 0.22).toFixed(2)}s`);
+    heart.style.setProperty('--x-1', `${((RNG.random() - 0.5) * 0.80).toFixed(2)}rem`);
+    heart.style.setProperty('--x-2', `${((RNG.random() - 0.5) * 1.18).toFixed(2)}rem`);
+    heart.style.setProperty('--x-3', `${((RNG.random() - 0.5) * 1.50).toFixed(2)}rem`);
+    heart.style.setProperty('--rot-0', `${(-10 + RNG.random() * 20).toFixed(1)}deg`);
+    heart.style.setProperty('--rot-1', `${(-14 + RNG.random() * 28).toFixed(1)}deg`);
+    heart.style.setProperty('--rot-2', `${(-12 + RNG.random() * 24).toFixed(1)}deg`);
+    heart.style.setProperty('--rot-3', `${(-16 + RNG.random() * 32).toFixed(1)}deg`);
+    layer.appendChild(heart);
+    setTimeout(() => heart.remove(), 1900);
+  }
+}
+
+function spawnSpecialMeterHudEffects(ratio = 0, milestone = false) {
+  const fx = document.getElementById('special-meter-fx');
+  if (!fx) return;
+  const clamped = Math.max(0, Math.min(1, ratio || 0));
+  const count = milestone ? 11 : (2 + Math.floor(clamped * 6));
+  const edgePct = Math.max(2, Math.min(98, clamped * 100));
+  const sparkColors = ['var(--c-accent)', 'var(--c-primary)', 'var(--c-secondary)', 'var(--c-ui)'];
+
+  fx.classList.toggle('burst', !!milestone);
+  if (milestone) setTimeout(() => fx.classList.remove('burst'), 220);
+
+  for (let i = 0; i < count; i++) {
+    const spark = document.createElement('span');
+    spark.className = 'special-meter-spark';
+    const jitter = (Math.random() - 0.5) * (milestone ? 14 : 7);
+    spark.style.left = `${Math.max(1, Math.min(99, edgePct + jitter)).toFixed(2)}%`;
+    spark.style.top = `${30 + Math.random() * 40}%`;
+    spark.style.setProperty('--spark-x', `${((Math.random() - 0.5) * (milestone ? 1.0 : 0.55)).toFixed(2)}rem`);
+    spark.style.setProperty('--spark-y', `${(-0.42 - Math.random() * (milestone ? 1.25 : 0.72)).toFixed(2)}rem`);
+    spark.style.setProperty('--spark-color', sparkColors[Math.floor(Math.random() * sparkColors.length)]);
+    fx.appendChild(spark);
+    setTimeout(() => spark.remove(), 760);
+  }
+}
+
+const SPECIAL_STORED_EFFECTS = {
+  bright: { symbol: '☀', label: 'SOLAR' },
+  calm: { symbol: '❄', label: 'FROST' },
+  mysterious: { symbol: '✦', label: 'ARCANE' },
+  tense: { symbol: '⚡', label: 'STORM' },
+  triumphant: { symbol: '★', label: 'CROWN' },
+};
+
+function specialStoredEffectForMood(moodId) {
+  return SPECIAL_STORED_EFFECTS[moodId] || SPECIAL_STORED_EFFECTS.tense;
+}
+
+function playStoredSpecialChargeHudEffect(moodId = 'tense', charges = 1) {
+  const effect = specialStoredEffectForMood(moodId);
+  const fx = document.getElementById('special-meter-fx');
+  const bar = document.getElementById('special-bar');
+  const button = document.getElementById('btn-special-action');
+  const counter = document.getElementById('special-charge-counter');
+  const buttonCounter = document.getElementById('special-button-count');
+
+  spawnSpecialMeterHudEffects(1, true);
+  spawnSpecialButtonTwinkle(moodId, charges, true);
+
+  if (fx) {
+    fx.dataset.chargeSymbol = effect.symbol;
+    fx.classList.remove('charge-complete');
+    void fx.offsetWidth;
+    fx.classList.add('charge-complete');
+    setTimeout(() => fx.classList.remove('charge-complete'), 960);
+  }
+  if (bar) {
+    bar.classList.add('meter-ready');
+    setTimeout(() => bar.classList.remove('meter-ready'), 720);
+  }
+  if (button) {
+    button.dataset.chargeSymbol = effect.symbol;
+    button.classList.remove('charge-complete');
+    void button.offsetWidth;
+    button.classList.add('charge-complete');
+    setTimeout(() => button.classList.remove('charge-complete'), 840);
+  }
+  if (counter) {
+    counter.textContent = `×${charges}`;
+    counter.classList.remove('hidden');
+    counter.classList.remove('pulse');
+    void counter.offsetWidth;
+    counter.classList.add('pulse');
+    setTimeout(() => counter.classList.remove('pulse'), 620);
+  }
+  if (buttonCounter) {
+    buttonCounter.textContent = `×${charges}`;
+    buttonCounter.classList.remove('hidden');
+  }
+}
+
+function spawnSpecialButtonTwinkle(moodId = 'tense', charges = 1, burst = false) {
+  const button = document.getElementById('btn-special-action');
+  if (!button) return;
+  const amount = burst ? 7 + Math.min(5, charges * 2) : 1 + Math.min(4, charges);
+  for (let i = 0; i < amount; i++) {
+    const spark = document.createElement('span');
+    spark.className = 'special-button-spark';
+    spark.style.left = `${12 + Math.random() * 76}%`;
+    spark.style.top = `${12 + Math.random() * 76}%`;
+    spark.style.setProperty('--spark-x', `${((Math.random() - 0.5) * (burst ? 1.25 : 0.72)).toFixed(2)}rem`);
+    spark.style.setProperty('--spark-y', `${(-0.35 - Math.random() * (burst ? 1.25 : 0.78)).toFixed(2)}rem`);
+    button.appendChild(spark);
+    setTimeout(() => spark.remove(), 760);
+  }
+}
+
 /* ---------- ENTITIES ---------- */
 class Fighter {
   constructor(opts) {
@@ -2263,6 +3217,11 @@ class Fighter {
     this.skin = opts.skin || '#f4a261';
     this.shirt = opts.shirt || '#2a9d8f';
     this.isPlayer = !!opts.isPlayer;
+    this.readabilityScale = this.isPlayer
+      ? READABILITY_SCALE.player
+      : (opts.isBoss ? READABILITY_SCALE.boss : READABILITY_SCALE.enemy);
+    this.w *= this.readabilityScale;
+    this.h *= this.readabilityScale;
     this.state = 'idle';  // idle, walk, attack, hurt, knocked
     this.stateTime = 0;
     this.attackType = null;
@@ -2320,6 +3279,22 @@ class Fighter {
     this.heldWeapon = null;
     this.grabbedEnemy = null;
     this.invulnTime = 0;
+    this.specialShadowTime = 0;
+    this.specialShadowTotal = 0;
+    this.specialShadowCount = 0;
+    this.specialTrailColor = null;
+    this.specialSpinTime = 0;
+    this.specialSpinTotal = 0;
+    this.specialSpinAngle = 0;
+    this.specialSpinRate = 0;
+    this.specialOrbitRadius = 0;
+    this.specialOrbitBaseX = this.x;
+    this.specialOrbitBaseY = this.y;
+    this.specialOrbitPhase = 0;
+    this.specialSpinMode = null;
+    this.specialPathPattern = 'circle';
+    this.specialPathPoints = null;
+    this.specialPathAspect = 0.52;
   }
   get groundLine() { return groundY + (this.y - backY) * 0.0; } // not used
   get isAlive() { return this.hp > 0 && this.state !== 'dead'; }
@@ -2361,11 +3336,15 @@ class Fighter {
       : baseSpec;
     const attackDamageMult = this.isPlayer ? 1 : (this.enemyDamageMult || 1);
     const attackKnockMult = this.isPlayer ? 1 : Math.min(1.35, 0.95 + attackDamageMult * 0.18);
+    const hitScale = this.readabilityScale || 1;
+    const scaledReach = spec.reach * hitScale;
+    const scaledWidth = spec.width * hitScale;
+    const scaledHeight = spec.height * hitScale;
 
     return {
-      x: this.x + this.facing * (this.w/2 + spec.reach/2 - 6) - spec.width/2,
+      x: this.x + this.facing * (this.w/2 + scaledReach/2 - 6) - scaledWidth/2,
       y: this.y - this.h * spec.yScale - this.z * 0.15,
-      w: spec.width, h: spec.height,
+      w: scaledWidth, h: scaledHeight,
       dmg: spec.dmg * attackDamageMult,
       knock: spec.knock * attackKnockMult,
       step,
@@ -2693,9 +3672,11 @@ class Fighter {
       }
     }
 
-    // Clamp to play area
-    this.x = Math.max(20, Math.min(W - 20, this.x));
-    this.y = Math.max(backY + 10, Math.min(groundY, this.y));
+    // V27: movement is limited only by hard arena boundaries. The camera follows
+    // and pans independently; the visible viewport is no longer a movement cage.
+    const hardBounds = getHardPlayBounds();
+    this.x = Math.max(hardBounds.left, Math.min(hardBounds.right, this.x));
+    this.y = Math.max(hardBounds.top, Math.min(hardBounds.bottom, this.y));
   }
   draw(g) {
     if (this.state === 'dead' && this.deathTime > 2) return;
@@ -3020,6 +4001,8 @@ class Prop {
       pipe:   { w: 32, h: 10, damage: 46, tossVz: 205, mass: 0.72 },
     };
     Object.assign(this, specs[type] || specs.crate);
+    this.w *= READABILITY_SCALE.prop;
+    this.h *= READABILITY_SCALE.prop;
   }
   rect() {
     return { x: this.x - this.w/2, y: this.y - this.h, w: this.w, h: this.h };
@@ -3144,6 +4127,7 @@ class WeaponPickup {
     this.x = x; this.y = y;
     this.t = 0;
     this.dead = false;
+    this.readabilityScale = READABILITY_SCALE.weaponPickup;
     this.durability = type === 'pipe' ? 8 : 1;
   }
   draw(g) {
@@ -3204,10 +4188,30 @@ class World {
     this.holdAttackTimer = { punch: 0, kick: 0 };
     this.combatMetrics = { hitTimes: [], hitStreak: 0, lastHitAt: -Infinity };
     this.specialMeter = 0;
+    this.specialCharges = 0;
+    this.maxSpecialCharges = 3;
     this.specialReadyAnnounced = false;
     this.specialBuffTime = 0;
     this.specialBuffDamageMult = 1;
     this.specialRings = [];
+    this.displaySpecialMeter = 0;
+    this.specialChargeFxAt = 0;
+    this.specialChargeAudioAt = 0;
+    this.specialChargeTier = 0;
+    this.actionZoom = 0;
+    this.actionZoomTarget = 0;
+    this.camera = {
+      x: W * 0.5,
+      y: backY + (groundY - backY) * 0.68,
+      targetX: W * 0.5,
+      targetY: backY + (groundY - backY) * 0.68,
+      zoom: getPlayfieldZoom(),
+      targetZoom: getPlayfieldZoom(),
+    };
+    this.cameraDeadZone = { x: 0.12, y: 0.10 };
+    this.hitCameraEnergy = 0;
+    this.lastSuccessfulHitAt = -Infinity;
+    this.lastActionCameraAccentAt = 0;
     this.gameplayEventLog = [];
     this.qaForcedEventIndex = 0;
     this.neonTrails = [];
@@ -3235,6 +4239,37 @@ class World {
       probability: 0.04, cooldownMs: 1200,
       lambda: 0.3,
       effect: (ctx) => this.spawnSparkleBurst(),
+    });
+
+    // Stored SPECIAL ambiance uses the same bounded exponential randomizer family
+    // as ambient scene sparkles. More stored charges => more frequent twinkle.
+    this.specialUiRng = new EventRandomizer();
+    this.specialUiRng.register({
+      id: 'special.ui_meter_twinkle',
+      rarityTier: 'common',
+      probability: 0.18, cooldownMs: 240,
+      lambda: 0.34,
+      trigger: () => this.specialCharges > 0 || this.specialMeter >= 35,
+      effect: () => spawnSpecialMeterHudEffects(Math.max(this.specialCharges / this.maxSpecialCharges, this.specialMeter / 100), false),
+    });
+    this.specialUiRng.register({
+      id: 'special.ui_button_twinkle',
+      rarityTier: 'uncommon',
+      probability: 0.10, cooldownMs: 620,
+      lambda: 0.28,
+      trigger: () => this.specialCharges > 0,
+      effect: () => spawnSpecialButtonTwinkle(this.currentMoodId, this.specialCharges),
+    });
+    this.specialUiRng.register({
+      id: 'special.ui_bank_flare',
+      rarityTier: 'rare',
+      probability: 0.10, cooldownMs: 1450,
+      lambda: 0.24,
+      trigger: () => this.specialCharges >= 2 || this.specialMeter >= 72,
+      effect: () => {
+        spawnSpecialMeterHudEffects(Math.max(this.specialCharges / this.maxSpecialCharges, this.specialMeter / 100), true);
+        spawnSpecialButtonTwinkle(this.currentMoodId, Math.max(1, this.specialCharges), true);
+      },
     });
 
     // Gameplay event randomizer: bounded, inspectable dramatic spice layer.
@@ -3381,10 +4416,34 @@ class World {
     this.holdAttackTimer = { punch: 0, kick: 0 };
     this.combatMetrics = { hitTimes: [], hitStreak: 0, lastHitAt: -Infinity };
     this.specialMeter = 0;
+    this.specialCharges = 0;
     this.specialReadyAnnounced = false;
     this.specialBuffTime = 0;
     this.specialBuffDamageMult = 1;
     this.specialRings.length = 0;
+    this.displaySpecialMeter = 0;
+    this.specialChargeFxAt = 0;
+    this.specialChargeAudioAt = 0;
+    this.specialChargeTier = 0;
+    this.actionZoom = 0;
+    this.actionZoomTarget = 0;
+    const startCamera = clampCameraCenter(
+      this.player?.x ?? W * 0.5,
+      (this.player?.y ?? (backY + (groundY - backY) * 0.68)) - 24,
+      getPlayfieldZoom()
+    );
+    this.camera = {
+      x: startCamera.x,
+      y: startCamera.y,
+      targetX: startCamera.x,
+      targetY: startCamera.y,
+      zoom: getPlayfieldZoom(),
+      targetZoom: getPlayfieldZoom(),
+    };
+    this.cameraDeadZone = { x: 0.12, y: 0.10 };
+    this.hitCameraEnergy = 0;
+    this.lastSuccessfulHitAt = -Infinity;
+    this.lastActionCameraAccentAt = 0;
     this.neonTrails.length = 0;
     this.levelAdvanceReady = false;
     this.levelTransitionActive = false;
@@ -3400,13 +4459,39 @@ class World {
     this.syncRunMood(true);
     this.seedPropsForWave();
   }
+
+  spawnHeartHoldFlutter(intensity = 0.5, rare = false) {
+    if (!this.player?.isAlive) return;
+    const count = rare ? 2 : 1;
+    for (let i = 0; i < count; i++) {
+      const px = this.player.x + (RNG.random() - 0.5) * 18;
+      const py = this.player.y - (this.player.z || 0) - 42 - RNG.random() * 8;
+      this.sparkles.push({
+        kind: 'heartFlutter',
+        x: px,
+        y: py,
+        vx: (RNG.random() - 0.5) * (rare ? 10 : 6),
+        vy: -(28 + RNG.random() * (rare ? 22 : 16)),
+        life: 0.96 + RNG.random() * (rare ? 0.60 : 0.42),
+        maxLife: 1.52 + RNG.random() * 0.34,
+        size: 13 + intensity * 8 + RNG.random() * 4 + (rare ? 2 : 0),
+        color: heartFlutterColor(rare),
+        twinkle: RNG.random() * Math.PI * 2,
+        swayPhase: RNG.random() * Math.PI * 2,
+        swaySpeed: 5.0 + RNG.random() * 2.4,
+        swayAmp: 9 + intensity * 7 + RNG.random() * 5 + (rare ? 5 : 0),
+        glyph: rare && RNG.random() < 0.42 ? '❣' : '♥',
+        rare,
+      });
+    }
+  }
+
   updateRunMetaBadge() {
-    const badge = document.getElementById('run-meta-badge');
-    if (!badge) return;
+    const arcLine = document.getElementById('emotion-arc-label');
+    if (!arcLine) return;
     const arcLabel = ARC_LIBRARY[this.arcId]?.label || ARC_LIBRARY.firstNightOut.label;
     const seedLabel = RNG.deterministic ? ` · SEED ${RNG.label}` : '';
-    badge.textContent = `ARC · ${arcLabel}${seedLabel}`;
-    badge.classList.remove('hidden');
+    arcLine.textContent = `ARC · ${arcLabel}${seedLabel}`;
   }
   seedPropsForWave() {
     const density = this.profile.gameplay.prop_density || 1;
@@ -3591,15 +4676,158 @@ class World {
     if (item) this.spawnPickup(item, x, y);
   }
 
-  chargeSpecial(amount) {
+  chargeSpecial(amount, source = 'gain') {
     if (!Number.isFinite(amount) || amount <= 0) return;
-    const before = this.specialMeter;
-    this.specialMeter = Math.min(100, this.specialMeter + amount);
-    if (before < 100 && this.specialMeter >= 100 && !this.specialReadyAnnounced) {
-      this.specialReadyAnnounced = true;
-      this.addFloat('SPECIAL READY!', this.player.x, this.player.y - 102, this.mood.primary_colors[0]);
-      this.spawnSpecialRing(this.player.x, this.player.y, 56, this.mood.accent_colors[0], 0.75);
-      Audio.sfxPickup();
+    if (this.specialCharges >= this.maxSpecialCharges && this.specialMeter >= 100) return;
+
+    let remaining = amount;
+    let safety = 0;
+    while (remaining > 0.0001 && safety++ < 8) {
+      if (this.specialCharges >= this.maxSpecialCharges) {
+        const beforeCap = this.specialMeter;
+        this.specialMeter = 100;
+        const capGain = Math.max(0, this.specialMeter - beforeCap);
+        if (capGain > 0) this.reactToSpecialMeterRise(beforeCap, this.specialMeter, capGain, source);
+        remaining = 0;
+        break;
+      }
+
+      const before = Math.max(0, Math.min(100, this.specialMeter));
+      const needed = Math.max(0.0001, 100 - before);
+      const gained = Math.min(remaining, needed);
+      const after = Math.min(100, before + gained);
+      this.specialMeter = after;
+      if (gained > 0) this.reactToSpecialMeterRise(before, after, gained, source);
+      remaining -= gained;
+
+      if (after >= 99.999) {
+        this.bankSpecialCharge(source);
+        if (this.specialCharges >= this.maxSpecialCharges) {
+          this.specialMeter = 100;
+          remaining = 0;
+        } else {
+          this.specialMeter = 0;
+        }
+      }
+    }
+  }
+
+  bankSpecialCharge(source = 'gain') {
+    const previousCharges = this.specialCharges;
+    this.specialCharges = Math.min(this.maxSpecialCharges, this.specialCharges + 1);
+    const moodId = this.currentMoodId || settings.previewMood || 'tense';
+
+    this.specialReadyAnnounced = this.specialCharges > 0;
+    const label = this.specialCharges >= this.maxSpecialCharges
+      ? 'SPECIAL MAX!'
+      : `SPECIAL ×${this.specialCharges}!`;
+    this.addFloat(label, this.player.x, this.player.y - 108, this.mood.primary_colors[0]);
+    this.spawnSpecialRing(this.player.x, this.player.y, 62 + this.specialCharges * 8, this.mood.accent_colors[0], 0.86);
+    this.spawnSpecialMeterBurst(1, true);
+    this.spawnStoredChargeWorldEffect(moodId, this.specialCharges);
+    playStoredSpecialChargeHudEffect(moodId, this.specialCharges);
+    Audio.sfxStoredSpecial(moodId, this.specialCharges);
+    if (previousCharges === 0) Audio.sfxPickup();
+  }
+
+  spawnStoredChargeWorldEffect(moodId, storedCount = 1) {
+    if (!this.player) return;
+    const mood = MOODS[moodId] || MOODS.tense;
+    const count = 14 + Math.min(18, storedCount * 4);
+    const radius = 28 + storedCount * 8;
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2 + RNG.random() * 0.24;
+      const dist = 8 + RNG.random() * radius;
+      const speed = 34 + RNG.random() * (48 + storedCount * 10);
+      this.sparkles.push({
+        x: this.player.x + Math.cos(a) * dist,
+        y: this.player.y - 46 + Math.sin(a) * dist * 0.65,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed - 36,
+        life: 0.95 + RNG.random() * 0.78,
+        maxLife: 1.72,
+        size: 1.8 + RNG.random() * (2.4 + storedCount * 0.45),
+        color: mood.particle_colors[Math.floor(RNG.random() * mood.particle_colors.length)],
+        twinkle: RNG.random() * Math.PI * 2,
+        rarity: 'stored_special',
+      });
+    }
+    this.flash(mood.accent_colors[0], 0.07 + storedCount * 0.018);
+    this.shake(3 + storedCount * 1.2);
+  }
+
+  reactToSpecialMeterRise(before, after, gained, source = 'gain') {
+    const ratio = Math.max(0, Math.min(1, after / 100));
+    const now = performance.now();
+    const oldTier = Math.floor(Math.max(0, before) / 25);
+    const newTier = Math.floor(Math.max(0, Math.min(99.999, after)) / 25);
+
+    if (newTier > oldTier) {
+      this.specialChargeTier = newTier;
+      const pct = Math.min(75, newTier * 25);
+      if (pct > 0) {
+        this.addFloat(`SPECIAL ${pct}%`, this.player.x, this.player.y - 112, this.mood.accent_colors[0]);
+        this.spawnSpecialRing(this.player.x, this.player.y, 38 + newTier * 7, this.mood.primary_colors[0], 0.56);
+        this.spawnSpecialMeterBurst(ratio, true);
+        spawnSpecialMeterHudEffects(ratio, true);
+        Audio.sfxChargeSpark(this.currentMoodId, Math.max(0.25, ratio), true);
+      }
+    }
+
+    const fxInterval = Math.max(150, 520 - ratio * 360);
+    if (now - (this.specialChargeFxAt || 0) >= fxInterval) {
+      this.specialChargeFxAt = now;
+      this.spawnSpecialMeterBurst(ratio, false);
+      spawnSpecialMeterHudEffects(ratio, false);
+    }
+
+    const audioInterval = Math.max(420, 1400 - ratio * 760);
+    const audioChance = source === 'heart'
+      ? (0.18 + ratio * 0.56)
+      : (0.10 + ratio * 0.36);
+    if (now - (this.specialChargeAudioAt || 0) >= audioInterval && RNG.random() < audioChance) {
+      this.specialChargeAudioAt = now;
+      Audio.sfxChargeSpark(this.currentMoodId, Math.max(0.16, ratio), false);
+    }
+  }
+
+  spawnSpecialMeterBurst(ratio = 0, milestone = false) {
+    if (!this.player) return;
+    const m = this.mood;
+    const colors = m.particle_colors || [m.accent_colors[0], m.primary_colors[0]];
+    const count = milestone ? 12 : (2 + Math.floor(ratio * 7));
+    const radius = milestone ? 26 : 14 + ratio * 22;
+    for (let i = 0; i < count; i++) {
+      const angle = RNG.random() * Math.PI * 2;
+      const dist = 6 + RNG.random() * radius;
+      const x = this.player.x + Math.cos(angle) * dist;
+      const y = this.player.y - 42 + Math.sin(angle) * dist * 0.62;
+      const speed = 22 + RNG.random() * (milestone ? 58 : 34);
+      this.sparkles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - (20 + ratio * 22),
+        life: 0.85 + RNG.random() * (milestone ? 0.70 : 0.40),
+        maxLife: 1.55,
+        size: 1.4 + RNG.random() * (1.8 + ratio * 2.2),
+        color: colors[Math.floor(RNG.random() * colors.length)],
+        twinkle: RNG.random() * Math.PI * 2,
+        rarity: milestone ? 'rare' : 'charge',
+      });
+    }
+
+    if (milestone || RNG.random() < 0.10 + ratio * 0.22) {
+      this.spawnSpecialRing(
+        this.player.x,
+        this.player.y,
+        22 + ratio * 34 + (milestone ? 12 : 0),
+        m.accent_colors[0],
+        0.28 + ratio * 0.24
+      );
+    }
+
+    if (ratio > 0.55 && RNG.random() < 0.12 + ratio * 0.18) {
+      this.flash(m.accent_colors[0], 0.035 + ratio * 0.035);
     }
   }
   spawnSpecialRing(x, y, radius, color, life = 0.55) {
@@ -3610,12 +4838,13 @@ class World {
     const knockDir = Math.sign(enemy.x - this.player.x) || this.player.facing;
     enemy.hurt(dmg, knockDir, knock);
     this.score += Math.floor(dmg);
+    this.recordSuccessfulPlayerHit(0.48, 'special');
     this.spawnImpact(enemy.x, enemy.y - 28);
     if (label) this.addFloat(`${label} +${Math.floor(dmg)}`, enemy.x, enemy.y - 92, this.mood.accent_colors[0]);
     return true;
   }
   useSpecial() {
-    if (!this.player?.isAlive || this.specialMeter < 100) return false;
+    if (!this.player?.isAlive || this.specialCharges <= 0) return false;
     if (this.player.heldProp || this.player.grabbedEnemy || this.player.grabbedBy || this.player.isThrown) return false;
 
     const moodId = this.currentMoodId || settings.previewMood || 'tense';
@@ -3624,8 +4853,10 @@ class World {
     let effectLabel = 'SPECIAL!';
     let affected = 0;
 
-    this.specialMeter = 0;
-    this.specialReadyAnnounced = false;
+    this.specialCharges = Math.max(0, this.specialCharges - 1);
+    this.recordSuccessfulPlayerHit(0.62, 'special');
+    if (this.specialMeter >= 100) this.specialMeter = 0;
+    this.specialReadyAnnounced = this.specialCharges > 0;
     Audio.sfxSpecial(moodId);
     haptic(60);
 
@@ -3648,6 +4879,12 @@ class World {
         const t = i / 3;
         this.spawnSpecialRing(startX + (endX - startX) * t, y0, 28 + i * 8, this.mood.primary_colors[0], 0.4 + i * 0.06);
       }
+      this.activateSpecialMotion('dash', {
+        duration: 0.56,
+        spinDuration: 0.30,
+        shadowCount: 5,
+        color: this.mood.primary_colors[0]
+      });
       this.flash(this.mood.primary_colors[0], 0.16);
       this.shake(8);
     } else if (moodId === 'calm') {
@@ -3658,6 +4895,12 @@ class World {
       const healed = Math.max(0, this.player.hp - before);
       this.addFloat(`+${healed} HP`, this.player.x, this.player.y - 122, '#7cf07c');
       this.spawnSpecialRing(this.player.x, this.player.y, 110, this.mood.primary_colors[0], 0.95);
+      this.activateSpecialMotion('calm', {
+        duration: 0.42,
+        spinDuration: 0.22,
+        shadowCount: 3,
+        color: this.mood.secondary_colors[0] || this.mood.primary_colors[0]
+      });
       this.flash(this.mood.secondary_colors[0] || this.mood.primary_colors[0], 0.13);
       this.shake(3);
     } else if (moodId === 'mysterious') {
@@ -3678,6 +4921,12 @@ class World {
       }
       this.spawnSpecialRing(x0, y0, 42, this.mood.accent_colors[0], 0.45);
       this.spawnSpecialRing(this.player.x, this.player.y, 118, this.mood.primary_colors[0], 0.78);
+      this.activateSpecialMotion('echo', {
+        duration: 0.62,
+        spinDuration: 0.38,
+        shadowCount: 5,
+        color: this.mood.accent_colors[0]
+      });
       this.flash(this.mood.accent_colors[0], 0.15);
       this.shake(6);
     } else if (moodId === 'triumphant') {
@@ -3686,6 +4935,12 @@ class World {
       this.specialBuffDamageMult = 2.0;
       this.player.invulnTime = Math.max(this.player.invulnTime, 0.75);
       this.spawnSpecialRing(this.player.x, this.player.y, 130, this.mood.primary_colors[0], 1.0);
+      this.activateSpecialMotion('crown', {
+        duration: 0.70,
+        spinDuration: 0.44,
+        shadowCount: 6,
+        color: this.mood.primary_colors[0]
+      });
       this.flash(this.mood.primary_colors[0], 0.18);
       this.shake(7);
     } else {
@@ -3699,6 +4954,15 @@ class World {
         }
       }
       this.spawnSpecialRing(this.player.x, this.player.y, radius, this.mood.accent_colors[0], 0.92);
+      this.activateSpecialMotion('radial', {
+        duration: 0.98,
+        spinDuration: 0.84,
+        radius: 22,
+        spinRate: 1.0,
+        shadowCount: 7,
+        shadowPersistMult: 1.32,
+        color: this.mood.accent_colors[0]
+      });
       this.flash(this.mood.accent_colors[0], 0.22);
       this.shake(12);
     }
@@ -3832,7 +5096,133 @@ class World {
     }
   }
   addFloat(text, x, y, color) {
-    this.floats.push({ text, x, y, life: 1, color: color || this.mood.primary_colors[0] });
+    const tiltDeg = Math.max(-18, Math.min(18, normalRandom(0, 6)));
+    this.floats.push({
+      text,
+      x,
+      y,
+      life: 1,
+      color: color || this.mood.primary_colors[0],
+      tiltDeg,
+    });
+  }
+  activateSpecialMotion(mode = 'default', opts = {}) {
+    const p = this.player;
+    if (!p) return;
+    const isRadial = mode === 'radial';
+    const durationBase = opts.duration ?? (isRadial ? 0.90 : 0.52);
+    const duration = Math.max(0.26, durationBase * (opts.shadowPersistMult ?? 1.26));
+    p.specialShadowTime = Math.max(p.specialShadowTime || 0, duration);
+    p.specialShadowTotal = duration;
+    p.specialShadowCount = opts.shadowCount ?? (isRadial ? 7 : 5);
+    p.specialTrailColor = opts.color || this.mood.accent_colors?.[0] || this.mood.primary_colors[0];
+    p.specialSpinMode = mode;
+    p.specialSpinTime = Math.max(p.specialSpinTime || 0, opts.spinDuration ?? (isRadial ? 0.82 : 0.42));
+    p.specialSpinTotal = p.specialSpinTime;
+    p.specialSpinRate = opts.spinRate ?? (isRadial ? 1.0 : 7.0);
+    p.specialOrbitRadius = opts.radius ?? (isRadial ? 20 : 0);
+    p.specialOrbitBaseX = p.x;
+    p.specialOrbitBaseY = p.y;
+    p.specialOrbitPhase = opts.phase ?? 0;
+    p.specialPathAspect = opts.aspect ?? 0.52;
+
+    const radialPatterns = ['circle', 'star', 'diamond', 'cross', 'pentagram', 'zigzag'];
+    p.specialPathPattern = opts.pattern || (isRadial
+      ? radialPatterns[Math.floor(Math.random() * radialPatterns.length)]
+      : 'circle');
+
+    if (p.specialPathPattern === 'star') {
+      p.specialPathPoints = [
+        [0.00, -1.00], [0.22, -0.26], [0.95, -0.30], [0.36, 0.10], [0.58, 0.86],
+        [0.00, 0.38], [-0.58, 0.86], [-0.36, 0.10], [-0.95, -0.30], [-0.22, -0.26], [0.00, -1.00],
+      ];
+    } else if (p.specialPathPattern === 'diamond') {
+      p.specialPathPoints = [[0, -1], [1, 0], [0, 1], [-1, 0], [0, -1]];
+    } else if (p.specialPathPattern === 'cross') {
+      p.specialPathPoints = [[0,-1], [0,1], [0,0], [1,0], [-1,0], [0,0], [0,-1]];
+    } else if (p.specialPathPattern === 'pentagram') {
+      p.specialPathPoints = [[0.00,-1.00], [0.59,0.81], [-0.95,-0.31], [0.95,-0.31], [-0.59,0.81], [0.00,-1.00]];
+    } else if (p.specialPathPattern === 'zigzag') {
+      p.specialPathPoints = [[-0.9,-0.8], [0.9,-0.4], [-0.7,0.0], [0.7,0.4], [-0.5,0.9], [0.0,0.0]];
+    } else {
+      p.specialPathPoints = null;
+    }
+  }
+  updatePlayerSpecialMotion(dt) {
+    const p = this.player;
+    if (!p) return;
+    if (p.specialShadowTime > 0) {
+      p.specialShadowTime = Math.max(0, p.specialShadowTime - dt);
+    }
+    if (p.specialSpinTime > 0) {
+      p.specialSpinTime = Math.max(0, p.specialSpinTime - dt);
+      const total = Math.max(0.001, p.specialSpinTotal || 0.001);
+      const t = 1 - (p.specialSpinTime / total);
+      const eased = t * t * (3 - 2 * t);
+      p.specialSpinAngle = eased * Math.PI * 2 * (p.specialSpinMode === 'radial' ? 1.8 : 1.0) * Math.max(0.1, p.specialSpinRate || 1);
+
+      if ((p.specialOrbitRadius || 0) > 0) {
+        const swirl = Math.sin(Math.PI * Math.max(0, Math.min(1, t)));
+        const aspect = p.specialPathAspect || 0.52;
+        let nx = 0;
+        let ny = 0;
+
+        if (p.specialSpinMode === 'radial' && Array.isArray(p.specialPathPoints) && p.specialPathPoints.length >= 2) {
+          const pts = p.specialPathPoints;
+          const segs = pts.length - 1;
+          const pos = Math.max(0, Math.min(0.9999, eased)) * segs;
+          const seg = Math.min(segs - 1, Math.floor(pos));
+          const local = pos - seg;
+          const a = pts[seg];
+          const b = pts[seg + 1];
+          nx = a[0] + (b[0] - a[0]) * local;
+          ny = a[1] + (b[1] - a[1]) * local;
+        } else {
+          const ang = (p.specialOrbitPhase || 0) + p.specialSpinAngle;
+          nx = Math.cos(ang);
+          ny = Math.sin(ang);
+        }
+
+        p.x = Math.max(24, Math.min(W - 24, p.specialOrbitBaseX + nx * p.specialOrbitRadius * swirl));
+        p.y = Math.max(backY + 12, Math.min(groundY, p.specialOrbitBaseY + ny * p.specialOrbitRadius * aspect * swirl));
+        p.facing = nx >= 0 ? 1 : -1;
+      }
+    } else {
+      p.specialSpinAngle = 0;
+      p.specialOrbitRadius = 0;
+      p.specialSpinMode = null;
+      p.specialPathPoints = null;
+      p.specialPathPattern = 'circle';
+    }
+  }
+  drawSpecialMotionAfterimages(g, fighter) {
+    if (!fighter || (fighter.specialShadowTime || 0) <= 0) return;
+    const total = Math.max(0.001, fighter.specialShadowTotal || 0.001);
+    const t = Math.max(0, Math.min(1, fighter.specialShadowTime / total));
+    const count = Math.max(4, fighter.specialShadowCount || 5);
+    const ox = fighter.x;
+    const oy = fighter.y;
+    const baseScale = fighter.readabilityScale || 1;
+    for (let i = count; i >= 1; i--) {
+      const frac = i / count;
+      const trailDist = 10 + frac * 20;
+      const spinAngle = (fighter.specialSpinAngle || 0) - frac * 0.58;
+      const offsetX = -fighter.facing * trailDist * (0.74 + 0.30 * t) + Math.cos(spinAngle) * (fighter.specialOrbitRadius || 0) * 0.30;
+      const offsetY = Math.sin(spinAngle) * (5 + (fighter.specialOrbitRadius || 0) * 0.22);
+      fighter.x = ox + offsetX;
+      fighter.y = oy + offsetY;
+      g.save();
+      g.globalAlpha = 0.11 + (1 - frac * 0.16) * 0.18 * t;
+      if (baseScale !== 1) {
+        g.translate(fighter.x, fighter.y);
+        g.scale(baseScale, baseScale);
+        g.translate(-fighter.x, -fighter.y);
+      }
+      fighter.draw(g);
+      g.restore();
+    }
+    fighter.x = ox;
+    fighter.y = oy;
   }
   flash(color, time) {
     this.flashColor = color;
@@ -3871,10 +5261,15 @@ class World {
       const type = propVariants.choose({ mood: nextMoodId, wave: nextWave }) || 'crate';
       const x = 52 + RNG.random() * Math.max(96, W - 104);
       const targetY = backY + 28 + RNG.random() * Math.max(50, groundY - backY - 52);
-      const startY = backY - 88 - i * 26 - RNG.random() * 34;
+      const depth = Math.max(0, Math.min(1, (targetY - backY) / Math.max(1, groundY - backY)));
+      // Objects begin just behind the horizon crest rather than floating in from the sky.
+      const startY = backY + 12 + RNG.random() * 16;
       const prop = new Prop(type, x, startY);
       prop.transitionStartY = startY;
       prop.transitionTargetY = targetY;
+      prop.transitionDepth = depth;
+      prop.transitionDelay = Math.min(0.30, depth * 0.22 + RNG.random() * 0.06);
+      prop.transitionReveal = 0;
       prop.transitionIncoming = true;
       props.push(prop);
     }
@@ -3888,10 +5283,14 @@ class World {
       const type = weaponVariants.choose({ mood: nextMoodId, wave: nextWave }) || 'pipe';
       const x = 72 + RNG.random() * Math.max(80, W - 144);
       const targetY = backY + 42 + RNG.random() * Math.max(40, groundY - backY - 58);
-      const startY = backY - 114 - RNG.random() * 44;
+      const depth = Math.max(0, Math.min(1, (targetY - backY) / Math.max(1, groundY - backY)));
+      const startY = backY + 10 + RNG.random() * 14;
       const weapon = new WeaponPickup(type, x, startY);
       weapon.transitionStartY = startY;
       weapon.transitionTargetY = targetY;
+      weapon.transitionDepth = depth;
+      weapon.transitionDelay = Math.min(0.28, depth * 0.20 + RNG.random() * 0.05);
+      weapon.transitionReveal = 0;
       weapon.transitionIncoming = true;
       weapons.push(weapon);
     }
@@ -3925,15 +5324,18 @@ class World {
     this.pickups = this.pickups.filter(pickup => !pickup.dead && pickup.y < H + 120);
     this.sparkles = this.sparkles.filter(sparkle => sparkle.y < H + 100 && sparkle.life > 0);
 
-    // New stage objects roll in from above the horizon.
-    for (const prop of this.levelIncoming.props || []) {
-      prop.y = prop.transitionStartY + (prop.transitionTargetY - prop.transitionStartY) * eased;
-      prop.t += dt;
-    }
-    for (const weapon of this.levelIncoming.weapons || []) {
-      weapon.y = weapon.transitionStartY + (weapon.transitionTargetY - weapon.transitionStartY) * eased;
-      weapon.t += dt;
-    }
+    // New stage objects remain hidden behind a crest at first, then slide down into
+    // the playable ground plane as if the player is moving over the next hill.
+    const advanceIncoming = (obj) => {
+      const delay = Math.max(0, Math.min(0.42, obj.transitionDelay || 0));
+      const local = Math.max(0, Math.min(1, (eased - delay) / Math.max(0.001, 1 - delay)));
+      const localEase = local * local * (3 - 2 * local);
+      obj.transitionReveal = local;
+      obj.y = obj.transitionStartY + (obj.transitionTargetY - obj.transitionStartY) * localEase;
+      obj.t += dt;
+    };
+    for (const prop of this.levelIncoming.props || []) advanceIncoming(prop);
+    for (const weapon of this.levelIncoming.weapons || []) advanceIncoming(weapon);
 
     if (this.levelTransitionProgress >= 1) this.finalizeLevelTransition();
   }
@@ -3969,10 +5371,19 @@ class World {
       if (this.specialBuffTime === 0) this.specialBuffDamageMult = 1;
     }
     const outOfCombat = performance.now() - (this.combatMetrics.lastHitAt || -Infinity) > 2200;
-    if (outOfCombat && this.specialMeter > 0 && this.specialMeter < 100) {
+    if (outOfCombat && !HeartbeatDirector.heartHeld && this.specialMeter > 0 && this.specialMeter < 100) {
       this.specialMeter = Math.max(0, this.specialMeter - dt * 5);
       if (this.specialMeter < 100) this.specialReadyAnnounced = false;
     }
+
+    // UI rendering uses a dedicated smoothed meter so the bar never snaps forward
+    // or backward, even when gameplay meter gains arrive in larger bursts.
+    const displayTarget = Math.max(0, Math.min(100, this.specialMeter));
+    if (!Number.isFinite(this.displaySpecialMeter)) this.displaySpecialMeter = displayTarget;
+    const displayDelta = displayTarget - this.displaySpecialMeter;
+    const displayEase = Math.min(1, dt * (displayDelta >= 0 ? 10.5 : 14.0));
+    this.displaySpecialMeter += displayDelta * displayEase;
+    if (Math.abs(displayDelta) < 0.035) this.displaySpecialMeter = displayTarget;
 
     // Special input: the diamond-pad SPECIAL button fires directly; PUNCH+KICK chord remains supported.
     const specialChordPressed = input.punch && input.kick && (input.punchPressed || input.kickPressed);
@@ -4011,7 +5422,8 @@ class World {
       input.punchPressed = false;
     }
     if (input.kickPressed) {
-      if (this.player.heldProp) this.dropHeldProp();
+      if (this.player.grabbedEnemy) this.throwGrabbedEnemy();
+      else if (this.player.heldProp) this.dropHeldProp();
       else if (this.player.heldWeapon?.type === 'pipe') this.throwPipeWeapon();
       else tryAttack('kick', 0.42, 'tap');
       input.kickPressed = false;
@@ -4039,6 +5451,7 @@ class World {
     }
 
     this.player.update(dt, this);
+    this.updatePlayerSpecialMotion(dt);
 
     // enemies
     for (const e of this.enemies) e.update(dt, this);
@@ -4071,6 +5484,10 @@ class World {
           this.combatMetrics.hitTimes.push(nowHit);
           Audio.sfxHit(); haptic(25);
           this.score += Math.floor(phb.dmg * mult);
+          this.recordSuccessfulPlayerHit(
+            phb.weaponType === 'pipe' ? 0.34 : (this.player.attackType === 'jumpkick' ? 0.30 : 0.24),
+            phb.weaponType === 'pipe' ? 'weapon' : 'hit'
+          );
           const holdMeterMult = this.player.attackSource === 'hold' ? 0.50 : 1.0;
           this.chargeSpecial(phb.dmg * baseMult * 0.86 * holdMeterMult);
           if (phb.weaponType === 'pipe') this.damagePipeDurability();
@@ -4143,6 +5560,7 @@ class World {
             const knockDir = Math.sign(enemy.x - prop.x) || this.player.facing;
             enemy.hurt(prop.damage, knockDir, prop.type === 'barrel' ? 1.35 : 1.05);
             this.score += prop.damage;
+            this.recordSuccessfulPlayerHit(prop.type === 'barrel' ? 0.42 : 0.36, 'throw');
             this.chargeSpecial(prop.damage * 0.42);
             this.combatMetrics.hitTimes.push(performance.now());
             this.addFloat(`PROP +${prop.damage}`, enemy.x, enemy.y - 86, this.mood.primary_colors[0]);
@@ -4169,6 +5587,7 @@ class World {
           thrown.throwVX *= 0.42;
           thrown.throwVz = Math.max(thrown.throwVz, 120);
           this.score += 26;
+          this.recordSuccessfulPlayerHit(0.40, 'throw');
           this.chargeSpecial(26 * 0.42);
           this.combatMetrics.hitTimes.push(performance.now());
           this.spawnImpact(enemy.x, enemy.y - 28);
@@ -4259,6 +5678,7 @@ class World {
     // Sparkle + event randomizers. Gameplay events pause during level-advance
     // staging so they cannot spawn surprise enemies or props mid-transition.
     this.sparkleRng.tick({});
+    this.specialUiRng?.tick({});
     if (!this.waveCleared && !this.levelTransitionActive) this.eventRng.tick({});
 
     // Player attack trails are short-lived neon ribbons that follow each strike arc.
@@ -4276,10 +5696,19 @@ class World {
 
     // sparkles
     for (const s of this.sparkles) {
-      s.x += s.vx * dt; s.y += s.vy * dt;
-      s.vy += 20 * dt;
-      s.life -= dt;
-      s.twinkle += dt * 8;
+      if (s.kind === 'heartFlutter') {
+        s.swingT = (s.swingT || 0) + dt * (s.swaySpeed || 5.5);
+        s.x += (s.vx || 0) * dt + Math.sin((s.swayPhase || 0) + s.swingT) * (s.swayAmp || 8) * dt;
+        s.y += (s.vy || -26) * dt;
+        s.vy += 12 * dt;
+        s.life -= dt;
+        s.twinkle += dt * 6;
+      } else {
+        s.x += s.vx * dt; s.y += s.vy * dt;
+        s.vy += 20 * dt;
+        s.life -= dt;
+        s.twinkle += dt * 8;
+      }
     }
     this.sparkles = this.sparkles.filter(s => s.life > 0);
 
@@ -4321,18 +5750,42 @@ class World {
       hitStreak: this.combatMetrics.hitStreak,
       moodId: this.currentMoodId,
     });
+    this.updateActionCamera(dt, reactiveIntensity);
 
     // Update HUD
     document.getElementById('hp-fill').style.width = Math.max(0, this.player.hp / this.player.maxHp * 100) + '%';
-    const specialPct = Math.max(0, Math.min(100, this.specialMeter));
+    const actualSpecialPct = Math.max(0, Math.min(100, this.specialMeter));
+    const visibleSpecialPct = Math.max(0, Math.min(100, Number.isFinite(this.displaySpecialMeter) ? this.displaySpecialMeter : actualSpecialPct));
+    const hasStoredSpecial = this.specialCharges > 0;
+    const atStoredCap = this.specialCharges >= this.maxSpecialCharges && actualSpecialPct >= 99.2;
     const specialFill = document.getElementById('special-fill');
-    specialFill.style.width = specialPct + '%';
-    specialFill.classList.toggle('ready', specialPct >= 100);
-    document.getElementById('special-val').textContent = specialPct >= 100
-      ? (this.specialBuffTime > 0 ? 'CROWN' : 'READY')
-      : Math.floor(specialPct) + '%';
+    const specialBar = document.getElementById('special-bar');
+    const chargeCounter = document.getElementById('special-charge-counter');
+    const buttonCounter = document.getElementById('special-button-count');
+    specialFill.style.width = visibleSpecialPct.toFixed(3) + '%';
+    specialFill.classList.toggle('ready', atStoredCap);
+    if (specialBar) {
+      specialBar.classList.toggle('meter-mid', visibleSpecialPct >= 35 && visibleSpecialPct < 72);
+      specialBar.classList.toggle('meter-high', visibleSpecialPct >= 72 && !atStoredCap);
+      specialBar.classList.toggle('meter-ready', atStoredCap);
+      specialBar.classList.toggle('has-bank', hasStoredSpecial);
+    }
+    if (chargeCounter) {
+      chargeCounter.textContent = `×${this.specialCharges}`;
+      chargeCounter.classList.toggle('hidden', !hasStoredSpecial);
+    }
+    if (buttonCounter) {
+      buttonCounter.textContent = `×${this.specialCharges}`;
+      buttonCounter.classList.toggle('hidden', !hasStoredSpecial);
+    }
+    document.getElementById('special-val').textContent = atStoredCap
+      ? 'MAX'
+      : Math.floor(visibleSpecialPct) + '%';
     const specialActionBtn = document.getElementById('btn-special-action');
-    if (specialActionBtn) specialActionBtn.classList.toggle('ready', specialPct >= 100);
+    if (specialActionBtn) {
+      specialActionBtn.classList.toggle('ready', hasStoredSpecial);
+      specialActionBtn.classList.toggle('bank-ready', hasStoredSpecial);
+    }
     document.getElementById('score-val').textContent = this.score.toLocaleString();
     document.getElementById('wave-line').textContent = 'WAVE ' + this.wave;
     updateEmotionSignal();
@@ -4454,6 +5907,65 @@ class World {
     });
     if (this.neonTrails.length > 42) this.neonTrails.splice(0, this.neonTrails.length - 42);
   }
+  drawIncomingLevelObjectsBehindCrest(g) {
+    if (!this.levelTransitionActive) return;
+
+    const p = Math.max(0, Math.min(1, this.levelTransitionProgress));
+    const eased = p * p * (3 - 2 * p);
+    const incomingOffset = -(1 - eased) * Math.min(H * 0.16, 120);
+    const nextMood = getEmotionProfile(this.nextMoodId || this.moodIdForWave(this.wave + 1));
+    const incoming = [
+      ...(this.levelIncoming.props || []).filter(obj => !obj.dead),
+      ...(this.levelIncoming.weapons || []).filter(obj => !obj.dead),
+    ].sort((a, b) => a.y - b.y);
+
+    if (!incoming.length) return;
+
+    g.save();
+    g.translate(0, incomingOffset);
+
+    for (const obj of incoming) {
+      const drawScale = obj.readabilityScale || 1;
+      const revealScale = 0.84 + 0.16 * Math.max(0, Math.min(1, obj.transitionReveal ?? eased));
+      g.save();
+      g.translate(obj.x, obj.y);
+      g.scale(drawScale * revealScale, drawScale * revealScale);
+      g.translate(-obj.x, -obj.y);
+      obj.draw(g);
+      g.restore();
+    }
+
+    // Foreground crest: objects exist behind this horizon ridge, then appear as
+    // the ridge recedes and the next level's ground plane opens downward.
+    const ridgeDepth = 12 + (1 - eased) * Math.min(118, Math.max(58, (groundY - backY) * 0.30));
+    const ridgeTop = backY - 4;
+    const crest = g.createLinearGradient(0, ridgeTop, 0, ridgeTop + ridgeDepth);
+    crest.addColorStop(0, nextMood.background_colors[1] || nextMood.background_colors[0]);
+    crest.addColorStop(0.32, nextMood.background_colors[0]);
+    crest.addColorStop(1, 'rgba(0,0,0,0.88)');
+    g.globalAlpha = 0.98;
+    g.fillStyle = crest;
+    g.fillRect(0, ridgeTop, W, ridgeDepth);
+
+    g.globalAlpha = 0.92;
+    g.strokeStyle = nextMood.primary_colors[0];
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(0, backY + 1);
+    g.lineTo(W, backY + 1);
+    g.stroke();
+
+    g.globalAlpha = 0.18 + (1 - eased) * 0.10;
+    g.strokeStyle = nextMood.secondary_colors[0] || nextMood.primary_colors[0];
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(0, backY + 9);
+    g.lineTo(W, backY + 9);
+    g.stroke();
+
+    g.restore();
+  }
+
   drawNeonAttackTrails(g) {
     for (const trail of this.neonTrails) {
       const a = Math.max(0, trail.life / Math.max(0.001, trail.maxLife));
@@ -4483,6 +5995,206 @@ class World {
     }
   }
 
+  recordSuccessfulPlayerHit(strength = 0.26, kind = 'hit') {
+    const gain = Math.max(0.08, Math.min(0.72, strength || 0.26));
+    this.lastSuccessfulHitAt = performance.now();
+    this.hitCameraEnergy = Math.min(1, (this.hitCameraEnergy || 0) + gain);
+    if (kind === 'special') this.hitCameraEnergy = Math.max(this.hitCameraEnergy, 0.92);
+    if (kind === 'throw') this.hitCameraEnergy = Math.max(this.hitCameraEnergy, 0.64);
+  }
+
+  updateActionCamera(dt, reactiveIntensity = 0) {
+    const reduced = !!settings.reduceMotion;
+    const now = performance.now();
+    const pressure = Math.max(0, Math.min(1, reactiveIntensity || 0));
+    const live = this.enemies.filter(e => e.isAlive);
+    const nearby = live.filter(e => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 240);
+
+    const thrownEnemy = live.find(e => e.isThrown && (e.throwLife > 0 || e.z > 0)) || null;
+    const thrownProp = (this.props || []).find(p => p.thrown && !p.dead && (p.damageArmed || p.z > 0 || p.life > 0)) || null;
+    const thrownWeapon = (this.weapons || []).find(w => w.thrown && !w.dead && (w.damageArmed || w.z > 0 || w.life > 0)) || null;
+    const throwFocus = thrownEnemy || thrownProp || thrownWeapon || null;
+
+    // Successful hits are the primary zoom signal. Without hits, the camera
+    // gradually relaxes back to the wider search framing.
+    const sinceHitMs = now - (this.lastSuccessfulHitAt || -Infinity);
+    const decayRate = sinceHitMs < 420 ? 0.06 : (sinceHitMs < 1600 ? 0.18 : 0.34);
+    this.hitCameraEnergy = Math.max(0, (this.hitCameraEnergy || 0) - Math.max(0, dt || 0) * decayRate);
+
+    const hitEnergy = Math.max(0, Math.min(1, this.hitCameraEnergy || 0));
+    const shapedHitEnergy = Math.pow(hitEnergy, 0.88);
+    const hitZoom = reduced || this.waveCleared || this.levelTransitionActive
+      ? 0
+      : Math.min(getHitZoomBonusCap(), shapedHitEnergy * getHitZoomBonusCap());
+    const specialAccent = reduced || this.waveCleared || this.levelTransitionActive
+      ? 0
+      : (this.specialBuffTime > 0 ? Math.min(0.12, getHitZoomBonusCap() * 0.10) : 0);
+    const targetActionZoom = Math.min(getHitZoomBonusCap(), hitZoom + specialAccent);
+
+    this.actionZoomTarget = targetActionZoom;
+    const actionZoomRate = throwFocus
+      ? (targetActionZoom > (this.actionZoom || 0) ? 7.8 : 2.9)
+      : (targetActionZoom > (this.actionZoom || 0) ? 6.4 : 2.15);
+    const actionZoomAlpha = 1 - Math.exp(-Math.max(0, dt || 0) * actionZoomRate);
+    this.actionZoom = (this.actionZoom || 0) + (targetActionZoom - (this.actionZoom || 0)) * actionZoomAlpha;
+    if (Math.abs(this.actionZoom) < 0.0005 && targetActionZoom === 0) this.actionZoom = 0;
+
+    let throwZoomOut = 0;
+    if (throwFocus && this.player) {
+      const tx = throwFocus.x;
+      const ty = (throwFocus.y || this.player.y) - (throwFocus.z || 0) - 24;
+      const playerFx = this.player.x;
+      const playerFy = this.player.y - (this.player.z || 0) - 24;
+      const throwDistance = Math.hypot(tx - playerFx, ty - playerFy);
+      const throwRange = W >= H ? 360 : 280;
+      const throwBlend = Math.max(0, Math.min(1, throwDistance / throwRange));
+      throwZoomOut = Math.min(0.78, 0.08 + throwBlend * (W >= H ? 0.46 : 0.64));
+    }
+
+    const baseZoom = getPlayfieldZoom();
+    const minFramedZoom = Math.max(1.08, baseZoom * 0.80);
+    const targetZoom = Math.max(minFramedZoom, baseZoom + (this.actionZoom || 0) - throwZoomOut);
+
+    if (!this.camera) {
+      const initial = clampCameraCenter(this.player?.x ?? W * 0.5, (this.player?.y ?? groundY) - 24, targetZoom);
+      this.camera = {
+        x: initial.x,
+        y: initial.y,
+        targetX: initial.x,
+        targetY: initial.y,
+        zoom: targetZoom,
+        targetZoom,
+      };
+    }
+
+    this.camera.targetZoom = targetZoom;
+    const zoomRate = throwFocus
+      ? (targetZoom > (this.camera.zoom || targetZoom) ? 9.2 : 5.6)
+      : (targetZoom > (this.camera.zoom || targetZoom) ? 5.9 : 2.1);
+    const zoomAlpha = 1 - Math.exp(-Math.max(0, dt || 0) * zoomRate);
+    this.camera.zoom = (this.camera.zoom || targetZoom) + (targetZoom - (this.camera.zoom || targetZoom)) * zoomAlpha;
+
+    let focusX = this.player?.x ?? W * 0.5;
+    let focusY = (this.player?.y ?? groundY) - (this.player?.z || 0) - 24;
+    let totalWeight = 0.70;
+    let weightedX = focusX * 0.70;
+    let weightedY = focusY * 0.70;
+
+    if (nearby.length) {
+      const enemyCenter = nearby.reduce((acc, e) => {
+        acc.x += e.x;
+        acc.y += e.y - (e.z || 0) - 24;
+        return acc;
+      }, { x: 0, y: 0 });
+      enemyCenter.x /= nearby.length;
+      enemyCenter.y /= nearby.length;
+      weightedX += enemyCenter.x * 0.18;
+      weightedY += enemyCenter.y * 0.18;
+      totalWeight += 0.18;
+    }
+
+    if (throwFocus) {
+      weightedX += throwFocus.x * 0.34;
+      weightedY += ((throwFocus.y || groundY) - (throwFocus.z || 0) - 24) * 0.34;
+      totalWeight += 0.34;
+    } else {
+      const dramaticTarget = this.player?.grabbedEnemy || live.find(e => e.isBoss) || null;
+      if (dramaticTarget) {
+        weightedX += dramaticTarget.x * 0.08;
+        weightedY += (dramaticTarget.y - (dramaticTarget.z || 0) - 28) * 0.08;
+        totalWeight += 0.08;
+      }
+    }
+
+    focusX = weightedX / Math.max(0.001, totalWeight);
+    focusY = weightedY / Math.max(0.001, totalWeight);
+
+    // Jump headroom is a visibility guarantee, not a dramatic camera flourish.
+    if ((this.player?.z || 0) > 0) {
+      focusY -= Math.min(76, (this.player.z || 0) * 0.36);
+    }
+
+    const anchor = getCameraScreenAnchor();
+    const zoomForDeadZone = Math.max(0.25, this.camera.zoom || targetZoom);
+    const deadW = W * (throwFocus ? 0.05 : (this.cameraDeadZone?.x ?? 0.12));
+    const deadH = H * (throwFocus ? 0.05 : (this.cameraDeadZone?.y ?? 0.10));
+    const screenDx = (focusX - this.camera.x) * zoomForDeadZone;
+    const screenDy = (focusY - this.camera.y) * zoomForDeadZone;
+
+    let targetX = this.camera.targetX ?? this.camera.x;
+    let targetY = this.camera.targetY ?? this.camera.y;
+    if (Math.abs(screenDx) > deadW) {
+      targetX = this.camera.x + (screenDx - Math.sign(screenDx) * deadW) / zoomForDeadZone;
+    }
+    if (Math.abs(screenDy) > deadH) {
+      targetY = this.camera.y + (screenDy - Math.sign(screenDy) * deadH) / zoomForDeadZone;
+    }
+
+    const clampedTarget = clampCameraCenter(targetX, targetY, this.camera.zoom || targetZoom, anchor);
+    this.camera.targetX = clampedTarget.x;
+    this.camera.targetY = clampedTarget.y;
+
+    const panRate = throwFocus ? 9.4 : (targetActionZoom > 0.04 ? 4.8 : 2.25);
+    const panAlpha = 1 - Math.exp(-Math.max(0, dt || 0) * panRate);
+    this.camera.x += (this.camera.targetX - this.camera.x) * panAlpha;
+    this.camera.y += (this.camera.targetY - this.camera.y) * panAlpha;
+
+    // Player visibility is a hard camera invariant. If panning alone cannot keep
+    // the fighter in frame during a jump or edge condition, zoom relaxes slightly.
+    const visible = ensurePlayerVisibleInCamera(
+      this.player,
+      this.camera.x,
+      this.camera.y,
+      this.camera.zoom || targetZoom,
+      anchor
+    );
+    this.camera.x = visible.x;
+    this.camera.y = visible.y;
+    this.camera.zoom = visible.zoom;
+    const clampedVisible = clampCameraCenter(this.camera.x, this.camera.y, this.camera.zoom, anchor);
+    this.camera.x = clampedVisible.x;
+    this.camera.y = clampedVisible.y;
+
+    if (!reduced && targetActionZoom > 0.078 && this.hitCameraEnergy > 0.34) {
+      this.triggerActionCameraAccent(Math.max(pressure, this.hitCameraEnergy));
+    }
+  }
+
+  getActionCameraFocus(fallback = { x: W * 0.5, y: H * 0.5 }) {
+    if (!this.camera) return fallback;
+    return { x: this.camera.x, y: this.camera.y };
+  }
+
+  triggerActionCameraAccent(intensity = 0) {
+    const now = performance.now();
+    if (now - (this.lastActionCameraAccentAt || 0) < 1350) return;
+    const chance = Math.min(0.52, 0.08 + Math.max(0, intensity) * 0.32);
+    if (RNG.random() > chance) return;
+    this.lastActionCameraAccentAt = now;
+
+    const mood = this.mood;
+    const x = this.player?.x ?? W * 0.5;
+    const y = this.player?.y ?? groundY * 0.8;
+    this.spawnSpecialRing(x, y, 30 + Math.max(0, intensity) * 34, mood.accent_colors[0], 0.38);
+    for (let i = 0; i < 5; i++) {
+      const a = RNG.random() * Math.PI * 2;
+      const speed = 22 + RNG.random() * 34;
+      this.sparkles.push({
+        x,
+        y: y - 32,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed - 18,
+        life: 0.58 + RNG.random() * 0.34,
+        maxLife: 0.92,
+        size: 1.2 + RNG.random() * 1.8,
+        color: mood.particle_colors[Math.floor(RNG.random() * mood.particle_colors.length)],
+        twinkle: RNG.random() * Math.PI * 2,
+        rarity: 'action_camera',
+      });
+    }
+    Audio.sfxActionZoom(this.currentMoodId, Math.min(1, intensity));
+  }
+
   spawnImpact(x, y) {
     const m = this.mood;
     const burstCount = this.gameplayMood.hitBurstCount || 8;
@@ -4508,12 +6220,26 @@ class World {
     g.save();
     g.translate(sx, sy);
 
+    // V27 camera transform: render the world through an independently panning,
+    // independently zooming camera. HUD and touch controls remain screen-space UI.
+    const playfieldZoom = this.camera?.zoom || (getPlayfieldZoom() + (this.actionZoom || 0));
+    const cameraCenter = this.camera || {
+      x: this.player?.x ?? W * 0.5,
+      y: (this.player?.y ?? groundY) - 24,
+    };
+    const screenAnchor = getCameraScreenAnchor();
+    g.translate(screenAnchor.x, screenAnchor.y);
+    g.scale(playfieldZoom, playfieldZoom);
+    g.translate(-cameraCenter.x, -cameraCenter.y);
+
     if (this.levelTransitionActive) {
       const p = Math.max(0, Math.min(1, this.levelTransitionProgress));
       const eased = p * p * (3 - 2 * p);
       const nextMood = getEmotionProfile(this.nextMoodId || this.moodIdForWave(this.wave + 1));
       const oldOffset = eased * Math.min(H * 0.52, 360);
-      const incomingOffset = -Math.min(H * 0.34, 220) + eased * Math.min(H * 0.48, 320);
+      // The incoming level now begins slightly beyond the horizon and settles to
+      // its exact final placement, keeping the crest reveal and backdrop aligned.
+      const incomingOffset = -(1 - eased) * Math.min(H * 0.16, 120);
       this.drawParallaxLevel(g, m, Math.max(0.10, 1 - eased * 0.94), oldOffset);
       this.drawParallaxLevel(g, nextMood, eased, incomingOffset);
     } else {
@@ -4524,11 +6250,27 @@ class World {
     for (const s of this.sparkles) {
       const a = (s.life / s.maxLife) * (0.7 + 0.3 * Math.sin(s.twinkle));
       g.globalAlpha = Math.max(0, Math.min(1, a));
-      g.fillStyle = s.color;
-      g.fillRect(s.x - s.size/2, s.y - s.size/2, s.size, s.size);
-      // sparkle cross
-      g.fillRect(s.x - s.size*1.5, s.y - 0.5, s.size*3, 1);
-      g.fillRect(s.x - 0.5, s.y - s.size*1.5, 1, s.size*3);
+      if (s.kind === 'heartFlutter') {
+        g.save();
+        g.translate(s.x, s.y);
+        g.rotate(Math.sin((s.swayPhase || 0) + (s.swingT || 0)) * 0.22);
+        g.fillStyle = s.color;
+        g.font = `${Math.max(12, s.size || 12)}px VT323, monospace`;
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(s.glyph || '♥', 0, 0);
+        if (s.rare) {
+          g.fillRect(-0.5, -(s.size || 12) * 0.92, 1, (s.size || 12) * 0.42);
+          g.fillRect(-(s.size || 12) * 0.24, -0.5, (s.size || 12) * 0.48, 1);
+        }
+        g.restore();
+      } else {
+        g.fillStyle = s.color;
+        g.fillRect(s.x - s.size/2, s.y - s.size/2, s.size, s.size);
+        // sparkle cross
+        g.fillRect(s.x - s.size*1.5, s.y - 0.5, s.size*3, 1);
+        g.fillRect(s.x - 0.5, s.y - s.size*1.5, 1, s.size*3);
+      }
     }
     g.globalAlpha = 1;
 
@@ -4548,6 +6290,10 @@ class World {
 
     // Pickups
     for (const p of this.pickups) {
+      g.save();
+      g.translate(p.x, p.y);
+      g.scale(READABILITY_SCALE.pickup, READABILITY_SCALE.pickup);
+      g.translate(-p.x, -p.y);
       const pulse = 1 + Math.sin(p.t * 6) * 0.15;
       const fade = p.t > p.life - 2 ? Math.max(0, (p.life - p.t) / 2) : 1;
       g.globalAlpha = fade;
@@ -4570,22 +6316,35 @@ class World {
         g.fillRect(p.x - 4, p.y - 11, 8, 2);
       }
       g.globalAlpha = 1;
+      g.restore();
     }
 
-    // Props, weapons, incoming next-level objects, and combatants share a depth sort.
-    // During the upward advance, new level objects descend over the horizon while
-    // old scene objects drift down and out.
-    const incomingProps = this.levelTransitionActive ? (this.levelIncoming.props || []) : [];
-    const incomingWeapons = this.levelTransitionActive ? (this.levelIncoming.weapons || []) : [];
+    // Incoming next-level objects live behind a receding horizon crest during the
+    // transition; the current level's beings remain in the normal depth sort.
+    this.drawIncomingLevelObjectsBehindCrest(g);
+
     const beings = [
       ...this.props.filter(p => !p.dead),
       ...this.weapons.filter(w => !w.dead),
-      ...incomingProps.filter(p => !p.dead),
-      ...incomingWeapons.filter(w => !w.dead),
       this.player,
       ...this.enemies
     ].slice().sort((a,b) => a.y - b.y);
-    for (const b of beings) b.draw(g);
+    for (const b of beings) {
+      if (b === this.player && (b.specialShadowTime || 0) > 0) {
+        this.drawSpecialMotionAfterimages(g, b);
+      }
+      const drawScale = b.readabilityScale || 1;
+      if (drawScale !== 1) {
+        g.save();
+        g.translate(b.x, b.y);
+        g.scale(drawScale, drawScale);
+        g.translate(-b.x, -b.y);
+        b.draw(g);
+        g.restore();
+      } else {
+        b.draw(g);
+      }
+    }
 
     // Neon strike trails sit above fighters but below impact sparks.
     this.drawNeonAttackTrails(g);
@@ -4603,10 +6362,15 @@ class World {
     g.font = 'bold 16px "Bungee", system-ui, sans-serif';
     for (const f of this.floats) {
       g.globalAlpha = Math.max(0, Math.min(1, f.life));
+      const tilt = ((f.tiltDeg || 0) * Math.PI) / 180;
+      g.save();
+      g.translate(f.x, f.y);
+      g.rotate(tilt);
       g.fillStyle = '#000';
-      g.fillText(f.text, f.x + 2, f.y + 2);
+      g.fillText(f.text, 2, 2);
       g.fillStyle = f.color;
-      g.fillText(f.text, f.x, f.y);
+      g.fillText(f.text, 0, 0);
+      g.restore();
     }
     g.globalAlpha = 1;
 
@@ -4633,12 +6397,27 @@ class World {
       if (!this.levelTransitionActive) {
         g.fillStyle = 'rgba(0,0,0,0.78)';
         g.fillRect(0, H/2 - 56, W, 112);
+
+        // The movement cue sits above the banner rather than being swallowed by it.
+        const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.08;
+        const arrowY = H/2 - 86;
+        g.save();
+        g.translate(W/2, arrowY);
+        g.scale(pulse, pulse);
+        g.shadowColor = m.primary_colors[0];
+        g.shadowBlur = 18;
+        g.fillStyle = 'rgba(0,0,0,0.88)';
+        g.beginPath();
+        g.ellipse(0, -12, 30, 24, 0, 0, Math.PI * 2);
+        g.fill();
+        g.font = '700 54px "Bungee", system-ui';
+        g.fillStyle = m.primary_colors[0];
+        g.fillText('↑', 0, 4);
+        g.restore();
+
         g.font = '700 28px "Bungee", system-ui';
         g.fillStyle = m.primary_colors[0];
         g.fillText(`WAVE ${this.wave} CLEAR`, W/2, H/2 - 8);
-        g.font = '700 42px "Bungee", system-ui';
-        const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.08;
-        g.save(); g.translate(W/2, backY + 44); g.scale(pulse, pulse); g.fillText('↑', 0, 0); g.restore();
         g.font = '400 16px "VT323", system-ui';
         g.fillStyle = m.secondary_colors[0] || '#fff';
         g.fillText(`MOVE UP · THE NEXT LEVEL SCROLLS IN · ${nextBanner}`, W/2, H/2 + 26);
@@ -4718,7 +6497,9 @@ class World {
   }
 
   drawBackdrop(g, m) {
-    // City skyline + alley
+    // Horizon-staged city skyline + alley. With the zoomed playfield, we compress
+    // scenic visual interest downward so the atmosphere stays visible near the
+    // action instead of being stranded high above the frame.
     const bg1 = m.background_colors[0];
     const bg2 = m.background_colors[1] || m.background_colors[0];
     const grd = g.createLinearGradient(0, 0, 0, H);
@@ -4727,111 +6508,174 @@ class World {
     g.fillStyle = grd;
     g.fillRect(0, 0, W, H);
 
-    // Moon/sun
+    const horizonY = backY;
+    const skyBandTop = horizonY * 0.14;
+    const skyBandMid = horizonY * 0.34;
+    const skyBandLow = horizonY * 0.62;
+
+    g.save();
+
+    // Large celestial glow moved lower toward the horizon band.
     g.fillStyle = m.primary_colors[0];
-    g.globalAlpha = 0.35;
+    g.globalAlpha = 0.28;
     g.beginPath();
-    g.arc(W * 0.78, H * 0.18, 36, 0, Math.PI * 2);
+    g.arc(W * 0.79, skyBandMid, 34, 0, Math.PI * 2);
     g.fill();
-    g.globalAlpha = 1;
 
-    this.drawEmotionStageDetails(g, m);
+    // Framing boxes / neon panels in the upper band, but lower than before.
+    g.strokeStyle = m.secondary_colors[0] || m.primary_colors[0];
+    g.lineWidth = 4;
+    g.globalAlpha = 0.12;
+    const frameY = skyBandTop;
+    const frameXs = [W * 0.10, W * 0.26, W * 0.44, W * 0.67];
+    for (let i = 0; i < frameXs.length; i++) {
+      const x = frameXs[i];
+      const w = 46 + (i % 2) * 16;
+      const h = 24 + ((i + 1) % 2) * 10;
+      g.strokeRect(x, frameY + (i % 3) * 6, w, h);
+    }
 
-    // Far buildings (silhouettes)
-    g.fillStyle = m.background_colors[1] || m.background_colors[0];
-    const buildings = 12;
-    for (let i = 0; i < buildings; i++) {
-      const bw = W / buildings;
-      const bx = i * bw;
-      const bh = 60 + ((i * 73) % 90);
-      g.fillStyle = `rgba(0,0,0,${0.4 + (i%3)*0.08})`;
-      g.fillRect(bx, backY * 0.5 - bh, bw - 2, bh);
-      // windows
-      g.fillStyle = m.primary_colors[0];
-      g.globalAlpha = 0.7;
-      for (let wy = backY * 0.5 - bh + 6; wy < backY * 0.5 - 6; wy += 10) {
-        for (let wx = bx + 4; wx < bx + bw - 6; wx += 8) {
-          if (((wx + wy) % 17) % 3 === 0) g.fillRect(wx, wy, 3, 4);
+    // Distant skyline blocks and window glows clustered near the horizon.
+    const towerBaseY = skyBandLow;
+    for (let i = 0; i < 8; i++) {
+      const x = -10 + i * (W / 7.0);
+      const w = 42 + (i % 3) * 10;
+      const h = 48 + (i % 4) * 14;
+      g.globalAlpha = 0.16;
+      g.fillStyle = `rgba(255,255,255,0.04)`;
+      g.fillRect(x, towerBaseY - h, w, h);
+
+      g.globalAlpha = 0.12;
+      g.fillStyle = m.primary_colors[i % m.primary_colors.length];
+      const ww = Math.max(3, Math.floor(w / 6));
+      for (let wx = x + 5; wx < x + w - 5; wx += ww + 4) {
+        for (let wy = towerBaseY - h + 8; wy < towerBaseY - 8; wy += 10) {
+          if (((wx + wy + i) % 3) === 0) g.fillRect(wx, wy, ww, 5);
         }
       }
-      g.globalAlpha = 1;
     }
+
+    // Broad glows and circles also moved downward.
+    const orbYs = [skyBandMid, skyBandLow - 18, skyBandLow + 10];
+    for (let i = 0; i < 6; i++) {
+      g.globalAlpha = 0.08 + (i % 2) * 0.03;
+      g.fillStyle = m.primary_colors[i % m.primary_colors.length];
+      g.beginPath();
+      g.arc(W * (0.12 + i * 0.16), orbYs[i % orbYs.length], 22 + (i % 3) * 10, 0, Math.PI * 2);
+      g.fill();
+    }
+
+    // Atmospheric band right above the horizon.
+    g.globalAlpha = 0.08;
+    g.fillStyle = m.secondary_colors[0] || m.primary_colors[0];
+    g.fillRect(0, horizonY - 10, W, 26);
+
+    g.restore();
 
     // Mid wall
     g.fillStyle = `rgba(0,0,0,0.4)`;
     g.fillRect(0, backY - 30, W, 30);
+
     // Brick pattern hint
     g.strokeStyle = `rgba(255,255,255,0.05)`;
     g.lineWidth = 1;
     for (let by = backY - 26; by < backY; by += 6) {
-      g.beginPath(); g.moveTo(0, by); g.lineTo(W, by); g.stroke();
+      g.beginPath();
+      g.moveTo(0, by);
+      g.lineTo(W, by);
+      g.stroke();
     }
   }
   drawEmotionStageDetails(g, m) {
     const moodId = m.mood_id || this.currentMoodId || settings.previewMood || 'tense';
+    const horizonY = backY;
+    const bandTop = horizonY * 0.18;
+    const bandMid = horizonY * 0.42;
+    const bandLow = horizonY * 0.70;
     g.save();
+
     if (moodId === 'bright') {
-      g.globalAlpha = 0.24;
+      g.globalAlpha = 0.22;
       g.fillStyle = m.primary_colors[0];
       for (let i = 0; i < 4; i++) {
         const x = W * (0.12 + i * 0.22);
-        g.fillRect(x, backY * 0.23 + (i % 2) * 8, 54, 8);
-        g.fillRect(x + 8, backY * 0.23 + 8 + (i % 2) * 8, 4, 18);
-        g.fillRect(x + 42, backY * 0.23 + 8 + (i % 2) * 8, 4, 18);
+        const y = bandTop + (i % 2) * 10;
+        g.fillRect(x, y, 58, 8);
+        g.fillRect(x + 8, y + 8, 4, 20);
+        g.fillRect(x + 46, y + 8, 4, 20);
       }
       g.globalAlpha = 0.18;
-      g.fillStyle = m.secondary_colors[0];
-      g.fillRect(W * 0.07, backY * 0.64, W * 0.86, 4);
+      g.fillStyle = m.secondary_colors[0] || m.primary_colors[0];
+      g.fillRect(W * 0.07, bandLow, W * 0.86, 4);
+
     } else if (moodId === 'calm') {
-      g.globalAlpha = 0.18;
-      g.fillStyle = m.secondary_colors[0];
-      g.beginPath(); g.arc(W * 0.18, H * 0.18, 28, 0, Math.PI * 2); g.fill();
-      g.globalAlpha = 0.16;
+      g.globalAlpha = 0.15;
+      g.fillStyle = m.primary_colors[0];
       for (let i = 0; i < 5; i++) {
-        const x = W * (0.08 + i * 0.18);
-        g.fillRect(x, backY * 0.48 - 20 - (i % 2) * 8, 18, 20 + (i % 2) * 8);
-        g.fillRect(x + 4, backY * 0.48 - 32 - (i % 2) * 8, 10, 12);
+        const x = W * (0.10 + i * 0.18);
+        const y = bandMid + (i % 2) * 8;
+        g.fillRect(x, y, 26, 44);
+        g.fillRect(x + 6, y - 16, 14, 16);
       }
-    } else if (moodId === 'mysterious') {
-      g.globalAlpha = 0.22;
-      g.strokeStyle = m.accent_colors[0];
-      g.lineWidth = 3;
+      g.globalAlpha = 0.16;
+      g.strokeStyle = m.secondary_colors[0] || m.primary_colors[0];
+      g.lineWidth = 2;
       for (let i = 0; i < 3; i++) {
-        const x = W * (0.18 + i * 0.26);
-        g.strokeRect(x, backY * 0.26 + (i % 2) * 12, 40, 24);
+        const y = bandLow - i * 10;
+        g.beginPath();
+        g.moveTo(W * 0.08, y);
+        g.lineTo(W * 0.92, y);
+        g.stroke();
       }
-      g.globalAlpha = 0.12;
-      g.fillStyle = '#000';
-      g.fillRect(0, backY * 0.43, W, 22);
-    } else if (moodId === 'tense') {
-      g.globalAlpha = 0.22;
-      g.fillStyle = m.accent_colors[0];
+
+    } else if (moodId === 'mysterious') {
+      g.globalAlpha = 0.18;
+      g.strokeStyle = m.primary_colors[0];
+      g.lineWidth = 3;
       for (let i = 0; i < 5; i++) {
-        const x = W * (0.08 + i * 0.19);
-        g.fillRect(x, backY * 0.18 + (i % 2) * 7, 34, 10);
-        g.fillRect(x + 12, backY * 0.18 + 10 + (i % 2) * 7, 10, 18);
+        const x = W * (0.10 + i * 0.17);
+        const y = bandTop + (i % 3) * 18;
+        g.strokeRect(x, y, 36 + (i % 2) * 10, 22 + ((i + 1) % 2) * 10);
       }
-      g.globalAlpha = 0.16;
-      g.fillStyle = m.primary_colors[0];
-      g.fillRect(W * 0.03, backY * 0.60, W * 0.94, 5);
-    } else if (moodId === 'triumphant') {
+      g.globalAlpha = 0.08;
+      g.fillStyle = m.secondary_colors[0] || m.primary_colors[0];
+      g.fillRect(0, bandLow - 6, W, 12);
+
+    } else if (moodId === 'tense') {
       g.globalAlpha = 0.18;
       g.fillStyle = m.primary_colors[0];
-      for (let i = 0; i < 4; i++) {
-        const x = W * (0.10 + i * 0.22);
-        g.beginPath();
-        g.moveTo(x, backY * 0.16);
-        g.lineTo(x + 24, backY * 0.16);
-        g.lineTo(x + 12, backY * 0.28);
-        g.closePath();
-        g.fill();
+      for (let i = 0; i < 6; i++) {
+        const x = W * (0.08 + i * 0.16);
+        const baseY = bandMid + (i % 2) * 8;
+        g.fillRect(x, baseY, 18, 54);
+        g.fillRect(x - 6, baseY + 12, 30, 6);
       }
       g.globalAlpha = 0.14;
       g.strokeStyle = m.secondary_colors[0] || m.primary_colors[0];
       g.lineWidth = 4;
-      g.beginPath(); g.moveTo(W * 0.18, H * 0.06); g.lineTo(W * 0.42, backY * 0.66); g.stroke();
-      g.beginPath(); g.moveTo(W * 0.82, H * 0.06); g.lineTo(W * 0.58, backY * 0.66); g.stroke();
+      g.beginPath(); g.moveTo(W * 0.18, bandTop); g.lineTo(W * 0.42, bandLow); g.stroke();
+      g.beginPath(); g.moveTo(W * 0.82, bandTop); g.lineTo(W * 0.58, bandLow); g.stroke();
+
+    } else if (moodId === 'triumphant') {
+      g.globalAlpha = 0.20;
+      g.fillStyle = m.primary_colors[0];
+      for (let i = 0; i < 5; i++) {
+        const x = W * (0.12 + i * 0.18);
+        const y = bandTop + (i % 2) * 10;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + 22, y);
+        g.lineTo(x + 11, y + 28);
+        g.closePath();
+        g.fill();
+      }
+      g.globalAlpha = 0.20;
+      g.fillStyle = m.secondary_colors[0] || m.primary_colors[0];
+      for (let i = 0; i < 6; i++) {
+        g.fillRect(W * (0.08 + i * 0.15), bandLow - 8, 26, 4);
+      }
     }
+
     g.restore();
   }
 
@@ -4871,6 +6715,211 @@ function rectOverlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
+/* ---------- HEARTBEAT CENTER ---------- */
+const HeartbeatDirector = {
+  phase: 0,
+  visualEnergy: 0,
+  ringEnergy: 0,
+  firstBeatPending: true,
+  heartHeld: false,
+  holdPointerId: null,
+  holdTime: 0,
+
+  reset() {
+    this.phase = 0;
+    this.visualEnergy = 0;
+    this.ringEnergy = 0;
+    this.firstBeatPending = true;
+    this.heartHeld = false;
+    this.holdPointerId = null;
+    this.holdTime = 0;
+    const heart = document.getElementById('action-heart');
+    if (heart) heart.classList.remove('held');
+    const glyph = document.getElementById('action-heart-glyph');
+    if (glyph) {
+      glyph.classList.remove('beat-lub');
+      glyph.classList.remove('beat-dub');
+    }
+    document.getElementById('special-bar')?.classList.remove('heart-charging');
+    this.applyVisuals(heartbeatProfileForMood(game?.currentMoodId || settings.previewMood || 'bright'));
+  },
+
+  effectiveProfile() {
+    const fromMood = game?.currentMoodId || settings.previewMood || 'bright';
+    if (game?.levelTransitionActive && game?.nextMoodId) {
+      const p = Math.max(0, Math.min(1, game.levelTransitionProgress || 0));
+      const eased = p * p * (3 - 2 * p);
+      return heartbeatMix(
+        heartbeatProfileForMood(fromMood),
+        heartbeatProfileForMood(game.nextMoodId),
+        eased
+      );
+    }
+    return heartbeatProfileForMood(fromMood);
+  },
+
+  crossed(last, next, target) {
+    if (next >= last) return last < target && next >= target;
+    return last < target || next >= target;
+  },
+
+  pulseGlyph(kind = 'lub') {
+    const glyph = document.getElementById('action-heart-glyph');
+    if (!glyph) return;
+    const add = kind === 'dub' ? 'beat-dub' : 'beat-lub';
+    const remove = kind === 'dub' ? 'beat-lub' : 'beat-dub';
+    glyph.classList.remove(remove);
+    glyph.classList.remove(add);
+    void glyph.offsetWidth;
+    glyph.classList.add(add);
+    setTimeout(() => glyph.classList.remove(add), kind === 'dub' ? 180 : 220);
+  },
+
+  triggerLub(profile) {
+    this.visualEnergy = Math.max(this.visualEnergy, 1.0);
+    this.ringEnergy = Math.max(this.ringEnergy, 1.0);
+    this.pulseGlyph('lub');
+    const pauseMs = Math.max(0, Math.round(profile.doubleGapMs - profile.lubMs));
+    if (this.heartHeld) {
+      hapticPattern([
+        Math.max(1, Math.round(profile.lubMs)),
+        pauseMs,
+        Math.max(1, Math.round(profile.dubMs)),
+      ]);
+      const meterRatio = Math.max(0, Math.min(1, (game?.specialMeter || 0) / 100));
+      spawnHeartFlutterFromButton(0.45 + meterRatio * 0.4, false);
+    }
+  },
+
+  triggerDub(profile) {
+    this.visualEnergy = Math.max(this.visualEnergy, 0.74);
+    this.ringEnergy = Math.max(this.ringEnergy, 0.64);
+    this.pulseGlyph('dub');
+    if (this.heartHeld && expoChance(0.20, 1.35)) {
+      spawnHeartFlutterFromButton(0.36 + Math.max(0, Math.min(1, (game?.specialMeter || 0) / 100)) * 0.28, false);
+    }
+  },
+
+  maybeSpawnHoldFlutter(dt) {
+    if (!this.heartHeld || !game?.player?.isAlive) return;
+    const meterRatio = Math.max(0, Math.min(1, (game?.specialMeter || 0) / 100));
+    const intensity = Math.max(0.18, Math.min(1, 0.28 + this.holdTime * 0.24 + meterRatio * 0.44));
+
+    if (expoChance(Math.max(0.02, dt * (1.3 + intensity * 3.6)), 1.25)) {
+      spawnHeartFlutterFromButton(intensity, false);
+    }
+    if (expoChance(Math.max(0.01, dt * (0.35 + intensity * 1.9)), 1.95)) {
+      spawnHeartFlutterFromButton(intensity, true);
+    }
+
+    if (game?.spawnHeartHoldFlutter && expoChance(Math.max(0.03, dt * (1.4 + intensity * 4.2)), 1.35)) {
+      game.spawnHeartHoldFlutter(intensity, false);
+    }
+    if (game?.spawnHeartHoldFlutter && expoChance(Math.max(0.012, dt * (0.48 + intensity * 2.0)), 2.05)) {
+      game.spawnHeartHoldFlutter(intensity, true);
+    }
+  },
+
+  update(dt) {
+    const heart = document.getElementById('action-heart');
+    if (!heart || !running || paused) return;
+
+    if (this.heartHeld) this.holdTime += Math.max(0, dt || 0);
+    else this.holdTime = 0;
+
+    const profile = this.effectiveProfile();
+    const cycleMs = 60000 / Math.max(1, profile.bpm);
+    const dubPhase = Math.max(0.06, Math.min(0.46, profile.doubleGapMs / cycleMs));
+    const deltaPhase = Math.max(0, dt || 0) * 1000 / cycleMs;
+    const lastPhase = this.phase;
+    this.phase = (this.phase + deltaPhase) % 1;
+
+    const wrapped = this.phase < lastPhase;
+    if (wrapped || this.firstBeatPending) {
+      this.triggerLub(profile);
+      this.firstBeatPending = false;
+    }
+    if (this.crossed(lastPhase, this.phase, dubPhase)) this.triggerDub(profile);
+
+    if (this.heartHeld && game?.player?.isAlive && !game.levelTransitionActive) {
+      game.chargeSpecial((profile.chargeRate || 7) * Math.max(0, dt || 0), 'heart');
+      this.maybeSpawnHoldFlutter(Math.max(0, dt || 0));
+    }
+
+    this.visualEnergy = Math.max(0, this.visualEnergy - Math.max(0, dt || 0) * 4.7);
+    this.ringEnergy = Math.max(0, this.ringEnergy - Math.max(0, dt || 0) * 3.7);
+    this.applyVisuals(profile);
+  },
+
+  applyVisuals(profile) {
+    const heart = document.getElementById('action-heart');
+    if (!heart) return;
+    const energy = Math.max(0, Math.min(1, this.visualEnergy));
+    const ring = Math.max(0, Math.min(1, this.ringEnergy));
+    const motionMult = settings.reduceMotion ? 0.45 : 1;
+    const scale = 1 + profile.pulseScale * 0.92 * energy * motionMult;
+    const glyphScale = 1 + profile.pulseScale * 1.14 * energy * motionMult;
+    const glow = profile.glow * energy * motionMult;
+    const brightness = (0.10 + 0.34 * energy * motionMult).toFixed(3);
+    const tilt = (Math.sin(this.phase * Math.PI * 2) * (0.75 + ring * 2.1) * motionMult).toFixed(2);
+    const rock = ((this.heartHeld ? Math.sin(this.holdTime * 7.2) : Math.sin(this.phase * Math.PI * 2)) * (0.4 + ring * 1.6) * motionMult).toFixed(2);
+
+    heart.style.setProperty('--heart-scale', scale.toFixed(3));
+    heart.style.setProperty('--heart-glyph-scale', glyphScale.toFixed(3));
+    heart.style.setProperty('--heart-glow', `${glow.toFixed(1)}px`);
+    heart.style.setProperty('--heart-brightness', brightness);
+    heart.style.setProperty('--heart-ring-opacity', (0.18 + profile.ring * ring * motionMult).toFixed(3));
+    heart.style.setProperty('--heart-ring-scale', (1 + 0.24 * ring * motionMult).toFixed(3));
+    heart.style.setProperty('--heart-glyph-tilt', `${tilt}deg`);
+    heart.style.setProperty('--heart-rock', `${rock}deg`);
+  }
+};
+
+function bindActionHeartHold() {
+  const heart = document.getElementById('action-heart');
+  if (!heart) return;
+
+  const start = (e) => {
+    if (e?.pointerType === 'mouse' && e.button !== undefined && e.button !== 0) return;
+    e.preventDefault?.();
+    e.stopPropagation?.();
+    HeartbeatDirector.heartHeld = true;
+    HeartbeatDirector.holdPointerId = e?.pointerId ?? null;
+    HeartbeatDirector.holdTime = 0;
+    heart.classList.add('held');
+    document.getElementById('special-bar')?.classList.add('heart-charging');
+    try {
+      if (e?.pointerId != null) heart.setPointerCapture(e.pointerId);
+    } catch (_) {}
+    spawnHeartFlutterFromButton(0.34, false);
+    haptic(8);
+  };
+
+  const end = (e) => {
+    if (HeartbeatDirector.holdPointerId != null && e?.pointerId != null && e.pointerId !== HeartbeatDirector.holdPointerId) return;
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    HeartbeatDirector.heartHeld = false;
+    HeartbeatDirector.holdPointerId = null;
+    HeartbeatDirector.holdTime = 0;
+    heart.classList.remove('held');
+    document.getElementById('special-bar')?.classList.remove('heart-charging');
+  };
+
+  if (window.PointerEvent) {
+    heart.addEventListener('pointerdown', start, { passive: false });
+    heart.addEventListener('pointerup', end, { passive: false });
+    heart.addEventListener('pointercancel', end, { passive: false });
+    heart.addEventListener('lostpointercapture', end, { passive: false });
+  } else {
+    heart.addEventListener('touchstart', (e) => start(e.touches?.[0] || e), { passive: false });
+    heart.addEventListener('touchend', end, { passive: false });
+    heart.addEventListener('touchcancel', end, { passive: false });
+    heart.addEventListener('mousedown', start);
+    window.addEventListener('mouseup', end);
+  }
+}
+
 /* ---------- MAIN LOOP ---------- */
 let lastT = 0;
 let running = false;
@@ -4887,6 +6936,7 @@ function loop(t, generation = loopGeneration) {
     game.draw(ctx);
     ctx.restore();
   }
+  HeartbeatDirector.update(dt);
   updateQALab(dt);
   requestAnimationFrame((nextT) => loop(nextT, generation));
 }
@@ -4904,6 +6954,7 @@ function startGame() {
   document.getElementById('icon-stack').classList.remove('hidden');
   document.getElementById('touch-controls').classList.remove('hidden');
   updateEmotionSignal();
+  HeartbeatDirector.reset();
   requestAnimationFrame((nextT) => loop(nextT, generation));
 }
 
@@ -4926,6 +6977,7 @@ function updateEmotionSignal() {
   const label = document.getElementById('emotion-signal-label');
   if (glyph) glyph.textContent = mood.emoji;
   if (label) label.textContent = mood.display_name.toUpperCase();
+  if (game?.updateRunMetaBadge) game.updateRunMetaBadge();
 }
 
 function readMasterPeakDb() {
@@ -5042,7 +7094,7 @@ function setupSettingsUI() {
     settings.reduceMotion = v;
     document.body.classList.toggle('reduce-motion', v);
   });
-  wireToggle('haptics-toggle', () => settings.haptics, v => { settings.haptics = v; if (v) haptic(15); });
+  wireToggle('haptics-toggle', () => settings.haptics, v => { settings.haptics = v; if (v) { haptic(15); HeartbeatDirector.reset(); } });
   wireToggle('signal-toggle', () => settings.emotionSignal, v => { settings.emotionSignal = v; updateEmotionSignal(); });
   wireToggle('contrast-toggle', () => settings.contrastAid, v => { settings.contrastAid = v; document.body.classList.toggle('contrast-aid', v); });
   wireToggle('practice-toggle', () => settings.practiceMode, v => {
@@ -5162,7 +7214,7 @@ function init() {
   if (DEBUG_MODE) {
     document.getElementById('qa-lab')?.classList.remove('hidden');
     document.getElementById('qa-audio-stress')?.addEventListener('click', () => game?.runAudioStressTest());
-    document.getElementById('qa-full-meter')?.addEventListener('click', () => { if (game) { game.specialMeter = 100; game.specialReadyAnnounced = false; game.chargeSpecial(0); } });
+    document.getElementById('qa-full-meter')?.addEventListener('click', () => { if (game) { game.chargeSpecial(100, 'qa'); } });
     document.getElementById('qa-grappler')?.addEventListener('click', () => game?.spawnEnemy('grappler'));
     document.getElementById('qa-bottler')?.addEventListener('click', () => game?.spawnEnemy('trickster'));
     document.getElementById('qa-crown')?.addEventListener('click', () => game?.forceCrownClash());
